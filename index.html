@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TalentPulse AI — Recruitment Intelligence Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        navy: {
+                            50: '#f0f4f8',
+                            100: '#d9e2ec',
+                            200: '#bcccdc',
+                            300: '#9fb3c8',
+                            400: '#829ab1',
+                            500: '#627d98',
+                            600: '#486581',
+                            700: '#334e68',
+                            800: '#243b53',
+                            900: '#102a43',
+                            950: '#0b1d2e',
+                        },
+                        teal: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --primary-navy: #0f172a;
+            --accent-teal: #14b8a6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .dark .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .dark .card-hover:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+        }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        .animate-slide-up { animation: slideUp 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .risk-high { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); color: #991b1b; border: 1px solid #fecaca; }
+        .dark .risk-high { background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%); color: #fca5a5; border: 1px solid #b91c1c; }
+        .risk-medium { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); color: #92400e; border: 1px solid #fde68a; }
+        .dark .risk-medium { background: linear-gradient(135deg, #451a03 0%, #78350f 100%); color: #fcd34d; border: 1px solid #b45309; }
+        .risk-low { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); color: #065f46; border: 1px solid #a7f3d0; }
+        .dark .risk-low { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); color: #6ee7b7; border: 1px solid #059669; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .drawer-overlay { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+        .chart-container { position: relative; height: 280px; width: 100%; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .pipeline-bar { height: 8px; border-radius: 4px; transition: width 1s ease-out; }
+        .heatmap-cell { transition: all 0.2s; }
+        .heatmap-cell:hover { transform: scale(1.05); z-index: 10; }
+        .priority-high { border-left: 4px solid #ef4444; }
+        .priority-medium { border-left: 4px solid #f59e0b; }
+        .priority-low { border-left: 4px solid #3b82f6; }
+        .nav-item.active { background: rgba(20, 184, 166, 0.1); color: #14b8a6; border-right: 3px solid #14b8a6; }
+        .dark .nav-item.active { background: rgba(20, 184, 166, 0.15); }
+        .kpi-card { position: relative; overflow: hidden; }
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 100px; height: 100px;
+            background: radial-gradient(circle, rgba(20,184,166,0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: translate(30%, -30%);
+        }
+        .progress-ring { transform: rotate(-90deg); }
+        .ai-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .table-row { transition: background-color 0.15s; }
+        .table-row:hover { background-color: rgba(20, 184, 166, 0.03); }
+        .dark .table-row:hover { background-color: rgba(20, 184, 166, 0.05); }
+        .toast {
+            animation: toastSlide 0.3s ease-out;
+        }
+        @keyframes toastSlide {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 transition-colors duration-300">
+
+    <!-- App Container -->
+    <div id="app" class="flex h-screen overflow-hidden">
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transition-all duration-300 z-40">
+            <div class="p-6 border-b border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center shadow-lg shadow-teal-500/20">
+                        <i data-lucide="activity" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg tracking-tight text-slate-900 dark:text-white">TalentPulse</h1>
+                        <p class="text-[10px] uppercase tracking-widest text-teal-600 font-semibold">AI</p>
+                    </div>
+                </div>
+                <p class="mt-3 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Transforming Recruitment from Reactive to Predictive</p>
+            </div>
+
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-hide">
+                <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    Executive Dashboard
+                </button>
+                <button onclick="navigate('candidates')" id="nav-candidates" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    Candidate Pulse
+                </button>
+                <button onclick="navigate('intelligence')" id="nav-intelligence" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <i data-lucide="brain-circuit" class="w-4 h-4"></i>
+                    AI Intelligence
+                </button>
+                <button onclick="navigate('bottlenecks')" id="nav-bottlenecks" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <i data-lucide="git-merge" class="w-4 h-4"></i>
+                    Bottleneck Monitor
+                </button>
+                <button onclick="navigate('actions')" id="nav-actions" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <i data-lucide="zap" class="w-4 h-4"></i>
+                    Action Center
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                <div class="bg-slate-100 dark:bg-slate-800/50 rounded-lg p-3">
+                    <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider">Current Role</p>
+                    <select id="roleSelector" onchange="switchRole(this.value)" class="w-full text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:text-white">
+                        <option value="recruiter">Recruiter View</option>
+                        <option value="manager" selected>Recruitment Manager</option>
+                        <option value="executive">Client Leadership</option>
+                    </select>
+                </div>
+                <button onclick="toggleTheme()" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
+                    <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+                    <span class="dark:hidden">Dark Mode</span>
+                    <span class="hidden dark:block">Light Mode</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Mobile Sidebar Overlay -->
+        <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 z-20">
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                    <div>
+                        <h2 id="pageTitle" class="text-xl font-semibold text-slate-900 dark:text-white">Executive Dashboard</h2>
+                        <p id="pageSubtitle" class="text-xs text-slate-500 dark:text-slate-400">Real-time recruitment intelligence overview</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button onclick="exportReport()" class="hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        Export Report
+                    </button>
+                    <button onclick="toggleNotifications()" class="relative p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <i data-lucide="bell" class="w-5 h-5 text-slate-600 dark:text-slate-400"></i>
+                        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                    </button>
+                    <div class="flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-slate-700">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-navy-600 to-navy-800 flex items-center justify-center text-white text-sm font-semibold">JD</div>
+                        <div class="hidden md:block">
+                            <p class="text-sm font-medium text-slate-900 dark:text-white">Jane Doe</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Recruitment Manager</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div id="contentArea" class="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                
+                <!-- PAGE 1: EXECUTIVE DASHBOARD -->
+                <div id="page-dashboard" class="page-content animate-fade-in space-y-6">
+                    <!-- KPI Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div class="kpi-card bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm card-hover">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Requisitions</span>
+                                <div class="p-1.5 bg-teal-50 dark:bg-teal-900/30 rounded-lg">
+                                    <i data-lucide="briefcase" class="w-4 h-4 text-teal-600 dark:text-teal-400"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl font-bold text-slate-900 dark:text-white">124</p>
+                            <div class="flex items-center gap-1 mt-2">
+                                <span class="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-0.5">
+                                    <i data-lucide="trending-up" class="w-3 h-3"></i> +8%
+                                </span>
+                                <span class="text-xs text-slate-400">vs last month</span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm card-hover">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Candidates</span>
+                                <div class="p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                                    <i data-lucide="users" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl font-bold text-slate-900 dark:text-white">2,847</p>
+                            <div class="flex items-center gap-1 mt-2">
+                                <span class="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-0.5">
+                                    <i data-lucide="trending-up" class="w-3 h-3"></i> +12%
+                                </span>
+                                <span class="text-xs text-slate-400">vs last month</span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm card-hover">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">High Risk Candidates</span>
+                                <div class="p-1.5 bg-red-50 dark:bg-red-900/30 rounded-lg">
+                                    <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 dark:text-red-400"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl font-bold text-red-600 dark:text-red-400">186</p>
+                            <div class="flex items-center gap-1 mt-2">
+                                <span class="text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-0.5">
+                                    <i data-lucide="trending-up" class="w-3 h-3"></i> +5%
+                                </span>
+                                <span class="text-xs text-slate-400">vs last week</span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm card-hover">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Offer Acceptance</span>
+                                <div class="p-1.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg">
+                                    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl font-bold text-slate-900 dark:text-white">87%</p>
+                            <div class="flex items-center gap-1 mt-2">
+                                <span class="text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-0.5">
+                                    <i data-lucide="trending-down" class="w-3 h-3"></i> -2%
+                                </span>
+                                <span class="text-xs text-slate-400">vs last month</span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm card-hover">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Avg Time to Fill</span>
+                                <div class="p-1.5 bg-amber-50 dark:bg-amber-900/30 rounded-lg">
+                                    <i data-lucide="clock" class="w-4 h-4 text-amber-600 dark:text-amber-400"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl font-bold text-slate-900 dark:text-white">31 Days</p>
+                            <div class="flex items-center gap-1 mt-2">
+                                <span class="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-0.5">
+                                    <i data-lucide="trending-down" class="w-3 h-3"></i> -3 days
+                                </span>
+                                <span class="text-xs text-slate-400">vs last month</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Charts Row -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Health Score -->
+                        <div class="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="font-semibold text-slate-900 dark:text-white">Recruitment Health Score</h3>
+                                <span class="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold rounded-full">Good</span>
+                            </div>
+                            <div class="flex items-center justify-center">
+                                <div class="relative w-48 h-48">
+                                    <svg class="w-full h-full transform -rotate-90">
+                                        <circle cx="96" cy="96" r="88" stroke="currentColor" stroke-width="12" fill="none" class="text-slate-100 dark:text-slate-800" />
+                                        <circle cx="96" cy="96" r="88" stroke="url(#healthGradient)" stroke-width="12" fill="none" stroke-dasharray="553" stroke-dashoffset="99" stroke-linecap="round" class="transition-all duration-1000" />
+                                        <defs>
+                                            <linearGradient id="healthGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                <stop offset="0%" stop-color="#14b8a6" />
+                                                <stop offset="100%" stop-color="#0d9488" />
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                        <span class="text-4xl font-bold text-slate-900 dark:text-white">82</span>
+                                        <span class="text-xs text-slate-500 dark:text-slate-400 mt-1">out of 100</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-6 grid grid-cols-3 gap-2 text-center">
+                                <div class="p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
+                                    <p class="text-lg font-bold text-emerald-600 dark:text-emerald-400">74</p>
+                                    <p class="text-[10px] text-slate-500 uppercase">Quality</p>
+                                </div>
+                                <div class="p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
+                                    <p class="text-lg font-bold text-teal-600 dark:text-teal-400">88</p>
+                                    <p class="text-[10px] text-slate-500 uppercase">Speed</p>
+                                </div>
+                                <div class="p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
+                                    <p class="text-lg font-bold text-amber-600 dark:text-amber-400">84</p>
+                                    <p class="text-[10px] text-slate-500 uppercase">Cost</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Risk Distribution -->
+                        <div class="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <h3 class="font-semibold text-slate-900 dark:text-white mb-4">Candidate Risk Distribution</h3>
+                            <div class="chart-container">
+                                <canvas id="riskChart"></canvas>
+                            </div>
+                            <div class="mt-4 flex justify-center gap-6">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                                    <span class="text-xs text-slate-600 dark:text-slate-400">High Risk (186)</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                                    <span class="text-xs text-slate-600 dark:text-slate-400">Medium (423)</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                                    <span class="text-xs text-slate-600 dark:text-slate-400">Low (2,238)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hiring Velocity -->
+                        <div class="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <h3 class="font-semibold text-slate-900 dark:text-white mb-4">Hiring Velocity Trend</h3>
+                            <div class="chart-container">
+                                <canvas id="velocityChart"></canvas>
+                            </div>
+                            <div class="mt-4 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                                <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pipeline & Insights Row -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Pipeline Health -->
+                        <div class="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <h3 class="font-semibold text-slate-900 dark:text-white mb-6">Pipeline Health Visualization</h3>
+                            <div class="space-y-6">
+                                <div>
+                                    <div class="flex justify-between text-sm mb-2">
+                                        <span class="text-slate-600 dark:text-slate-400 font-medium">Screening</span>
+                                        <span class="text-slate-900 dark:text-white font-semibold">847 candidates</span>
+                                    </div>
+                                    <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-teal-400 to-teal-600 rounded-full pipeline-bar" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-2">
+                                        <span class="text-slate-600 dark:text-slate-400 font-medium">Interview</span>
+                                        <span class="text-slate-900 dark:text-white font-semibold">432 candidates</span>
+                                    </div>
+                                    <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-teal-500 to-teal-700 rounded-full pipeline-bar" style="width: 51%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-2">
+                                        <span class="text-slate-600 dark:text-slate-400 font-medium">Offer</span>
+                                        <span class="text-slate-900 dark:text-white font-semibold">186 candidates</span>
+                                    </div>
+                                    <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full pipeline-bar" style="width: 22%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-2">
+                                        <span class="text-slate-600 dark:text-slate-400 font-medium">Hired</span>
+                                        <span class="text-slate-900 dark:text-white font-semibold">124 candidates</span>
+                                    </div>
+                                    <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full pipeline-bar" style="width: 15%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-6 grid grid-cols-4 gap-3 text-center">
+                                <div class="p-3 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800">
+                                    <p class="text-lg font-bold text-teal-700 dark:text-teal-400">29.7%</p>
+                                    <p class="text-[10px] text-slate-500 uppercase mt-1">Conversion</p>
+                                </div>
+                                <div class="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800">
+                                    <p class="text-lg font-bold text-amber-700 dark:text-amber-400">14.6%</p>
+                                    <p class="text-[10px] text-slate-500 uppercase mt-1">Interview→Offer</p>
+                                </div>
+                                <div class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800">
+                                    <p class="text-lg font-bold text-red-700 dark:text-red-400">8.2%</p>
+                                    <p class="text-[10px] text-slate-500 uppercase mt-1">Drop-off</p>
+                                </div>
+                                <div class="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800">
+                                    <p class="text-lg font-bold text-emerald-700 dark:text-emerald-400">87%</p>
+                                    <p class="text-[10px] text-slate-500 uppercase mt-1">Acceptance</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Insights Panel -->
+                        <div class="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <i data-lucide="sparkles" class="w-5 h-5 text-teal-500"></i>
+                                    Recent AI Insights
+                                </h3>
+                                <span class="text-xs text-slate-400 flex items-center gap-1">
+                                    <span class="w-2 h-2 bg-teal-500 rounded-full ai-pulse"></span>
+                                    Live Analysis
+                                </span>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 flex gap-3">
+                                    <div class="mt-0.5">
+                                        <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-900 dark:text-white">12 candidates show elevated drop-off risk</p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Sales and Engineering pipelines require immediate attention. Average response time exceeded 5 days.</p>
+                                        <div class="flex gap-2 mt-2">
+                                            <span class="px-2 py-0.5 bg-red-100 dark:bg-red-800/50 text-red-700 dark:text-red-300 text-[10px] font-semibold rounded">High Priority</span>
+                                            <span class="text-[10px] text-slate-400">2 hours ago</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50 flex gap-3">
+                                    <div class="mt-0.5">
+                                        <i data-lucide="trending-down" class="w-5 h-5 text-amber-500"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-900 dark:text-white">Sales hiring pipeline requires intervention</p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Open for 45 days. Feedback cycle averaging 6.4 days. Recommend escalation to hiring manager.</p>
+                                        <div class="flex gap-2 mt-2">
+                                            <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-800/50 text-amber-700 dark:text-amber-300 text-[10px] font-semibold rounded">Medium Priority</span>
+                                            <span class="text-[10px] text-slate-400">5 hours ago</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 flex gap-3">
+                                    <div class="mt-0.5">
+                                        <i data-lucide="bar-chart-2" class="w-5 h-5 text-blue-500"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-900 dark:text-white">Offer acceptance rates decreased by 5%</p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Week-over-week decline detected. Competitor activity likely. Recommend compensation review.</p>
+                                        <div class="flex gap-2 mt-2">
+                                            <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-800/50 text-blue-700 dark:text-blue-300 text-[10px] font-semibold rounded">Trend Alert</span>
+                                            <span class="text-[10px] text-slate-400">1 day ago</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-4 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800/50 flex gap-3">
+                                    <div class="mt-0.5">
+                                        <i data-lucide="check-circle" class="w-5 h-5 text-teal-500"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-900 dark:text-white">Operations team feedback cycle improved</p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Average feedback time reduced to 2.1 days. Positive trend in hiring manager engagement.</p>
+                                        <div class="flex gap-2 mt-2">
+                                            <span class="px-2 py-0.5 bg-teal-100 dark:bg-teal-800/50 text-teal-700 dark:text-teal-300 text-[10px] font-semibold rounded">Positive</span>
+                                            <span class="text-[10px] text-slate-400">2 days ago</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGE 2: CANDIDATE PULSE CENTER -->
+                <div id="page-candidates" class="page-content hidden animate-fade-in space-y-6">
+                    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div class="p-6 border-b border-slate-200 dark:border-slate-800">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div>
+                                    <h3 class="font-semibold text-slate-900 dark:text-white">Candidate Pulse Monitor</h3>
+                                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Real-time candidate risk assessment and engagement tracking</p>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="relative">
+                                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                        <input type="text" id="candidateSearch" oninput="filterCandidates()" placeholder="Search candidates..." class="pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 w-64 dark:text-white">
+                                    </div>
+                                    <button onclick="refreshCandidates()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                        <i data-lucide="refresh-cw" class="w-4 h-4 text-slate-600 dark:text-slate-400"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Filters -->
+                            <div class="flex gap-2 mt-4">
+                                <button onclick="setRiskFilter('all')" id="filter-all" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 transition-colors">All</button>
+                                <button onclick="setRiskFilter('high')" id="filter-high" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">High Risk</button>
+                                <button onclick="setRiskFilter('medium')" id="filter-medium" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">Medium Risk</button>
+                                <button onclick="setRiskFilter('low')" id="filter-low" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">Low Risk</button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Candidate</th>
+                                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Position</th>
+                                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Stage</th>
+                                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Last Activity</th>
+                                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Risk Score</th>
+                                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="candidateTableBody" class="divide-y divide-slate-200 dark:divide-slate-800">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Showing <span id="showingCount">12</span> of 2,847 candidates</p>
+                            <div class="flex gap-2">
+                                <button class="px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">Previous</button>
+                                <button class="px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGE 3: INTELLIGENCE CENTER -->
+                <div id="page-intelligence" class="page-content hidden animate-fade-in space-y-6">
+                    <div class="bg-gradient-to-r from-teal-600 to-teal-800 rounded-xl p-6 text-white shadow-lg">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i data-lucide="brain-circuit" class="w-6 h-6"></i>
+                            <h2 class="text-xl font-bold">AI Recruitment Intelligence</h2>
+                        </div>
+                        <p class="text-teal-100 text-sm">Deep analysis of candidate behavior, engagement patterns, and predictive risk modeling</p>
+                    </div>
+
+                    <div id="intelligenceContent" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Candidate Selection Prompt -->
+                        <div class="lg:col-span-3 flex flex-col items-center justify-center py-20 text-center">
+                            <div class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+                                <i data-lucide="mouse-pointer-click" class="w-8 h-8 text-slate-400"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Select a Candidate</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 max-w-md">Navigate to the Candidate Pulse Monitor and select any candidate to view AI-generated intelligence insights, risk factors, and recommended actions.</p>
+                            <button onclick="navigate('candidates')" class="mt-4 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors">
+                                Go to Candidate Pulse
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGE 4: BOTTLENECK MONITOR -->
+                <div id="page-bottlenecks" class="page-content hidden animate-fade-in space-y-6">
+                    <div class="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h3 class="font-semibold text-slate-900 dark:text-white mb-6">Workflow Health Monitor</h3>
+                        
+                        <!-- Section 1: Hiring Manager Feedback -->
+                        <div class="mb-8">
+                            <h4 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Delayed Hiring Manager Feedback</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div class="p-4 rounded-lg border border-red-200 dark:border-red-800/50 bg-red-50/50 dark:bg-red-900/10">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <span class="font-semibold text-slate-900 dark:text-white">Operations Team</span>
+                                        <span class="px-2 py-0.5 bg-red-100 dark:bg-red-800/50 text-red-700 dark:text-red-400 text-xs font-bold rounded">HIGH</span>
+                                    </div>
+                                    <div class="flex items-end gap-2 mb-2">
+                                        <span class="text-3xl font-bold text-red-600 dark:text-red-400">6.4</span>
+                                        <span class="text-sm text-slate-500 dark:text-slate-400 mb-1">Days Avg</span>
+                                    </div>
+                                    <div class="w-full h-2 bg-red-200 dark:bg-red-800/30 rounded-full mb-3">
+                                        <div class="h-full bg-red-500 rounded-full" style="width: 85%"></div>
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">12 pending feedback requests</p>
+                                </div>
+
+                                <div class="p-4 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-900/10">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <span class="font-semibold text-slate-900 dark:text-white">Sales Team</span>
+                                        <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-800/50 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded">LOW</span>
+                                    </div>
+                                    <div class="flex items-end gap-2 mb-2">
+                                        <span class="text-3xl font-bold text-emerald-600 dark:text-emerald-400">2.1</span>
+                                        <span class="text-sm text-slate-500 dark:text-slate-400 mb-1">Days Avg</span>
+                                    </div>
+                                    <div class="w-full h-2 bg-emerald-200 dark:bg-emerald-800/30 rounded-full mb-3">
+                                        <div class="h-full bg-emerald-500 rounded-full" style="width: 25%"></div>
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">3 pending feedback requests</p>
+                                </div>
+
+                                <div class="p-4 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-900/10">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <span class="font-semibold text-slate-900 dark:text-white">Engineering</span>
+                                        <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-800/50 text-amber-700 dark:text-amber-400 text-xs font-bold rounded">MEDIUM</span>
+                                    </div>
+                                    <div class="flex items-end gap-2 mb-2">
+                                        <span class="text-3xl font-bold text-amber-600 dark:text-amber-400">4.2</span>
+                                        <span class="text-sm text-slate-500 dark:text-slate-400 mb-1">Days Avg</span>
+                                    </div>
+                                    <div class="w-full h-2 bg-amber-200 dark:bg-amber-800/30 rounded-full mb-3">
+                                        <div class="h-full bg-amber-500 rounded-full" style="width: 55%"></div>
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">7 pending feedback requests</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Slow Moving Requisitions -->
+                        <div class="mb-8">
+                            <h4 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Slow Moving Requisitions</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="flex items-center gap-4 p-4 rounded-lg border border-red-200 dark:border-red-800/50 bg-red-50/30 dark:bg-red-900/5">
+                                    <div class="w-12 h-12 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                                        <i data-lucide="alert-circle" class="w-6 h-6 text-red-600 dark:text-red-400"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h5 class="font-semibold text-slate-900 dark:text-white">Sales Executive</h5>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">Open for 45 days • 3 candidates in pipeline</p>
+                                    </div>
+                                    <span class="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold rounded-full">Requires Intervention</span>
+                                </div>
+
+                                <div class="flex items-center gap-4 p-4 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50/30 dark:bg-amber-900/5">
+                                    <div class="w-12 h-12 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                                        <i data-lucide="clock" class="w-6 h-6 text-amber-600 dark:text-amber-400"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h5 class="font-semibold text-slate-900 dark:text-white">Supply Chain Analyst</h5>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">Open for 39 days • 5 candidates in pipeline</p>
+                                    </div>
+                                    <span class="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-bold rounded-full">At Risk</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Process Heatmap -->
+                        <div>
+                            <h4 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Recruitment Process Heatmap</h4>
+                            <div class="overflow-x-auto">
+                                <div class="min-w-[600px]">
+                                    <div class="grid grid-cols-6 gap-1 mb-2">
+                                        <div class="text-xs font-medium text-slate-500 dark:text-slate-400 p-2"></div>
+                                        <div class="text-xs font-medium text-slate-500 dark:text-slate-400 p-2 text-center">Application</div>
+                                        <div class="text-xs font-medium text-slate-500 dark:text-slate-400 p-2 text-center">Screening</div>
+                                        <div class="text-xs font-medium text-slate-500 dark:text-slate-400 p-2 text-center">Interview</div>
+                                        <div class="text-xs font-medium text-slate-500 dark:text-slate-400 p-2 text-center">Offer</div>
+                                        <div class="text-xs font-medium text-slate-500 dark:text-slate-400 p-2 text-center">Hire</div>
+                                    </div>
+                                    <div id="heatmapGrid" class="space-y-1">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4 mt-4 justify-end">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded bg-emerald-500"></span>
+                                    <span class="text-xs text-slate-500">Optimal</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded bg-amber-500"></span>
+                                    <span class="text-xs text-slate-500">Warning</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded bg-red-500"></span>
+                                    <span class="text-xs text-slate-500">Critical</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGE 5: ACTION CENTER -->
+                <div id="page-actions" class="page-content hidden animate-fade-in space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-slate-900 dark:text-white">Predictive Action Hub</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">AI-generated recommendations prioritized by impact and urgency</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="filterActions('all')" id="action-filter-all" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900">All</button>
+                            <button onclick="filterActions('high')" id="action-filter-high" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">High Priority</button>
+                            <button onclick="filterActions('medium')" id="action-filter-medium" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">Medium</button>
+                        </div>
+                    </div>
+
+                    <div id="actionsContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Action Cards populated by JS -->
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- Notifications Panel -->
+        <div id="notificationsPanel" class="fixed right-0 top-16 w-80 h-[calc(100vh-4rem)] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <h3 class="font-semibold text-slate-900 dark:text-white">Notifications</h3>
+                <button onclick="toggleNotifications()" class="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="p-4 space-y-3">
+                <div class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50">
+                    <div class="flex items-start gap-2">
+                        <span class="w-2 h-2 bg-red-500 rounded-full mt-1.5 shrink-0"></span>
+                        <div>
+                            <p class="text-sm font-medium text-slate-900 dark:text-white">High risk alert: 12 candidates</p>
+                            <p class="text-xs text-slate-500 mt-1">Sales pipeline drop-off risk detected</p>
+                            <p class="text-[10px] text-slate-400 mt-1">2 hours ago</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50">
+                    <div class="flex items-start gap-2">
+                        <span class="w-2 h-2 bg-amber-500 rounded-full mt-1.5 shrink-0"></span>
+                        <div>
+                            <p class="text-sm font-medium text-slate-900 dark:text-white">Feedback delay: Operations</p>
+                            <p class="text-xs text-slate-500 mt-1">Average 6.4 days - exceeds threshold</p>
+                            <p class="text-[10px] text-slate-400 mt-1">5 hours ago</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50">
+                    <div class="flex items-start gap-2">
+                        <span class="w-2 h-2 bg-blue-500 rounded-full mt-1.5 shrink-0"></span>
+                        <div>
+                            <p class="text-sm font-medium text-slate-900 dark:text-white">Weekly report generated</p>
+                            <p class="text-xs text-slate-500 mt-1">Recruitment metrics summary ready</p>
+                            <p class="text-[10px] text-slate-400 mt-1">1 day ago</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-3 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800/50">
+                    <div class="flex items-start gap-2">
+                        <span class="w-2 h-2 bg-teal-500 rounded-full mt-1.5 shrink-0"></span>
+                        <div>
+                            <p class="text-sm font-medium text-slate-900 dark:text-white">Offer accepted: David Chen</p>
+                            <p class="text-xs text-slate-500 mt-1">Senior Developer - Start date: July 15</p>
+                            <p class="text-[10px] text-slate-400 mt-1">2 days ago</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Candidate Profile Drawer -->
+        <div id="drawerOverlay" onclick="closeDrawer()" class="fixed inset-0 drawer-overlay z-50 hidden opacity-0 transition-opacity duration-300"></div>
+        <div id="candidateDrawer" class="fixed right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-slate-900 shadow-2xl transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto border-l border-slate-200 dark:border-slate-800">
+            <div id="drawerContent" class="p-6">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- Toast Container -->
+        <div id="toastContainer" class="fixed bottom-6 right-6 z-50 space-y-2"></div>
+    </div>
+
+    <script>
+        // ==================== DATA ====================
+        const candidates = [
+            { id: 1, name: "Michael Johnson", position: "Sales Representative", stage: "Interview", lastActivity: "5 Days Ago", riskScore: 82, status: "High Risk", email: "michael.j@email.com", phone: "+1 (555) 123-4567", location: "Chicago, IL", applied: "2024-05-15", factors: ["No response for 5 days", "Interview rescheduled twice", "Extended hiring cycle", "Competitor offer likely"], actions: ["Contact candidate within 24 hours", "Escalate to hiring manager", "Schedule engagement discussion"] },
+            { id: 2, name: "Sarah Lee", position: "HR Executive", stage: "Screening", lastActivity: "1 Day Ago", riskScore: 24, status: "Low Risk", email: "sarah.lee@email.com", phone: "+1 (555) 234-5678", location: "Austin, TX", applied: "2024-06-01", factors: ["Responsive communication", "Strong profile match", "Quick turnaround"], actions: ["Continue standard process", "Schedule next interview"] },
+            { id: 3, name: "David Wilson", position: "Operations Manager", stage: "Offer Stage", lastActivity: "3 Days Ago", riskScore: 61, status: "Medium Risk", email: "david.w@email.com", phone: "+1 (555) 345-6789", location: "Denver, CO", applied: "2024-05-20", factors: ["Delayed offer response", "Salary concerns raised", "Location flexibility questioned"], actions: [" expedite offer approval", "Schedule compensation discussion", "Highlight remote work options"] },
+            { id: 4, name: "Priya Sharma", position: "Talent Acquisition Specialist", stage: "Interview", lastActivity: "6 Days Ago", riskScore: 85, status: "High Risk", email: "priya.s@email.com", phone: "+1 (555) 456-7890", location: "New York, NY", applied: "2024-05-10", factors: ["Ghosted after second interview", "LinkedIn activity shows job search", "Competitor interview scheduled", "Low engagement score"], actions: ["Immediate outreach call", "Send personalized message", "Offer expedited process", "Engage hiring manager"] },
+            { id: 5, name: "Rahul Mehta", position: "Supply Chain Analyst", stage: "Assessment", lastActivity: "1 Day Ago", riskScore: 18, status: "Low Risk", email: "rahul.m@email.com", phone: "+1 (555) 567-8901", location: "Seattle, WA", applied: "2024-06-02", factors: ["Completed assessment early", "High skill match", "Strong references"], actions: ["Fast-track to interview", "Prepare offer package"] },
+            { id: 6, name: "Emily Chen", position: "Backend Developer", stage: "Offer Stage", lastActivity: "4 Days Ago", riskScore: 78, status: "High Risk", email: "emily.c@email.com", phone: "+1 (555) 678-9012", location: "San Francisco, CA", applied: "2024-05-18", factors: ["Counter offer received", "Extended decision timeline", "Competing offers from 2 companies"], actions: ["Salary alignment discussion", "Fast-track approval", "Hiring manager engagement call"] },
+            { id: 7, name: "James Rodriguez", position: "Marketing Director", stage: "Interview", lastActivity: "2 Days Ago", riskScore: 45, status: "Medium Risk", email: "james.r@email.com", phone: "+1 (555) 789-0123", location: "Miami, FL", applied: "2024-05-25", factors: ["Interview scheduling conflicts", "Travel requirements concern"], actions: ["Flexible scheduling options", "Clarify travel policy"] },
+            { id: 8, name: "Lisa Wang", position: "Data Scientist", stage: "Screening", lastActivity: "7 Days Ago", riskScore: 88, status: "High Risk", email: "lisa.w@email.com", phone: "+1 (555) 890-1234", location: "Boston, MA", applied: "2024-05-08", factors: ["No response to screening invite", "Profile updated on job boards", "Passive candidate behavior"], actions: ["Alternative contact method", "LinkedIn outreach", "Referral engagement"] },
+            { id: 9, name: "Robert Taylor", position: "Financial Analyst", stage: "Assessment", lastActivity: "3 Days Ago", riskScore: 52, status: "Medium Risk", email: "robert.t@email.com", phone: "+1 (555) 901-2345", location: "Dallas, TX", applied: "2024-05-22", factors: ["Assessment partially completed", "Request for extension"], actions: ["Follow up on assessment", "Offer support resources"] },
+            { id: 10, name: "Amanda Foster", position: "Product Manager", stage: "Hired", lastActivity: "1 Day Ago", riskScore: 12, status: "Low Risk", email: "amanda.f@email.com", phone: "+1 (555) 012-3456", location: "Portland, OR", applied: "2024-04-15", factors: ["Offer accepted", "Background check cleared", "Start date confirmed"], actions: ["Onboarding preparation", "Welcome package sent"] },
+            { id: 11, name: "Kevin O'Brien", position: "DevOps Engineer", stage: "Interview", lastActivity: "8 Days Ago", riskScore: 91, status: "High Risk", email: "kevin.o@email.com", phone: "+1 (555) 111-2222", location: "Atlanta, GA", applied: "2024-05-05", factors: ["Multiple no-shows", "Unresponsive to communication", "Alternative offer accepted"], actions: ["Final outreach attempt", "Close requisition if no response", "Document candidate behavior"] },
+            { id: 12, name: "Natalie Brooks", position: "UX Designer", stage: "Offer Stage", lastActivity: "2 Days Ago", riskScore: 38, status: "Low Risk", email: "natalie.b@email.com", phone: "+1 (555) 222-3333", location: "Los Angeles, CA", applied: "2024-05-28", factors: ["Positive offer feedback", "Negotiating start date", "Reference checks positive"], actions: ["Finalize start date", "Prepare offer letter amendments"] }
+        ];
+
+        const actions = [
+            { id: 1, role: "Backend Developer", prediction: "Offer Rejection", probability: 68, priority: "high", actions: ["Salary Alignment Discussion", "Fast-Track Approval", "Hiring Manager Engagement Call"] },
+            { id: 2, role: "Supply Chain Analyst", prediction: "Candidate Drop-Off", probability: 72, priority: "high", actions: ["Personalized Follow-Up", "Accelerated Interview Scheduling", "Enhanced Candidate Engagement"] },
+            { id: 3, role: "Sales Executive", prediction: "Feedback Delay", probability: 85, priority: "high", actions: ["Hiring Manager Escalation", "Set Feedback SLA", "Alternative Interview Panel"] },
+            { id: 4, role: "HR Executive", prediction: "Slow Pipeline", probability: 45, priority: "medium", actions: ["Streamline Screening Process", "Batch Interview Scheduling"] },
+            { id: 5, role: "Operations Manager", prediction: "Competitor Loss", probability: 55, priority: "medium", actions: ["Competitive Compensation Review", "Accelerated Timeline", "Executive Engagement"] },
+            { id: 6, role: "Marketing Director", prediction: "Offer Rejection", probability: 32, priority: "low", actions: ["Remote Work Options", "Signing Bonus Discussion"] }
+        ];
+
+        const heatmapData = [
+            { dept: "Sales", values: [2, 3, 4, 5, 1] },
+            { dept: "Engineering", values: [1, 2, 3, 4, 2] },
+            { dept: "Operations", values: [3, 4, 5, 4, 3] },
+            { dept: "Marketing", values: [1, 2, 2, 3, 1] },
+            { dept: "HR", values: [1, 1, 2, 2, 1] },
+            { dept: "Finance", values: [2, 3, 3, 4, 2] }
+        ];
+
+        // ==================== STATE ====================
+        let currentPage = 'dashboard';
+        let currentRole = 'manager';
+        let riskFilter = 'all';
+        let actionFilter = 'all';
+        let selectedCandidate = null;
+        let charts = {};
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initCharts();
+            renderCandidates();
+            renderHeatmap();
+            renderActions();
+            checkTheme();
+        });
+
+        // ==================== NAVIGATION ====================
+        function navigate(page) {
+            // Hide all pages
+            document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
+            // Show target page
+            document.getElementById(`page-${page}`).classList.remove('hidden');
+            
+            // Update nav active state
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`nav-${page}`)?.classList.add('active');
+            
+            // Update header
+            const titles = {
+                dashboard: ['Executive Dashboard', 'Real-time recruitment intelligence overview'],
+                candidates: ['Candidate Pulse Center', 'Monitor candidate engagement and risk indicators'],
+                intelligence: ['AI Intelligence Center', 'Deep predictive analytics and recommendations'],
+                bottlenecks: ['Bottleneck Monitor', 'Identify and resolve workflow constraints'],
+                actions: ['Predictive Action Hub', 'AI-generated prioritized recommendations']
+            };
+            document.getElementById('pageTitle').textContent = titles[page][0];
+            document.getElementById('pageSubtitle').textContent = titles[page][1];
+            
+            currentPage = page;
+            
+            // Close sidebar on mobile
+            if (window.innerWidth < 1024) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+                document.getElementById('sidebarOverlay').classList.add('hidden');
+            }
+
+            // Refresh charts if dashboard
+            if (page === 'dashboard') {
+                setTimeout(() => {
+                    if (charts.risk) charts.risk.destroy();
+                    if (charts.velocity) charts.velocity.destroy();
+                    initCharts();
+                }, 100);
+            }
+
+            // If navigating to intelligence with selected candidate, show it
+            if (page === 'intelligence' && selectedCandidate) {
+                renderIntelligence(selectedCandidate);
+            }
+        }
+
+        // ==================== THEME ====================
+        function checkTheme() {
+            if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        }
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            // Refresh charts for new colors
+            setTimeout(() => {
+                if (charts.risk) charts.risk.destroy();
+                if (charts.velocity) charts.velocity.destroy();
+                initCharts();
+            }, 100);
+        }
+
+        // ==================== SIDEBAR ====================
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        // ==================== ROLE SWITCHING ====================
+        function switchRole(role) {
+            currentRole = role;
+            showToast(`Switched to ${role.charAt(0).toUpperCase() + role.slice(1)} View`, 'info');
+            
+            // Role-based visibility
+            const recruiterOnly = document.querySelectorAll('.recruiter-only');
+            const managerOnly = document.querySelectorAll('.manager-only');
+            const executiveOnly = document.querySelectorAll('.executive-only');
+            
+            recruiterOnly.forEach(el => el.style.display = role === 'recruiter' ? '' : 'none');
+            managerOnly.forEach(el => el.style.display = role === 'manager' ? '' : 'none');
+            executiveOnly.forEach(el => el.style.display = role === 'executive' ? '' : 'none');
+        }
+
+        // ==================== CHARTS ====================
+        function initCharts() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+            const gridColor = isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(148, 163, 184, 0.1)';
+
+            // Risk Distribution Chart
+            const riskCtx = document.getElementById('riskChart');
+            if (riskCtx) {
+                charts.risk = new Chart(riskCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+                        datasets: [{
+                            data: [186, 423, 2238],
+                            backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                                titleColor: isDark ? '#f8fafc' : '#0f172a',
+                                bodyColor: isDark ? '#cbd5e1' : '#475569',
+                                borderColor: isDark ? '#334155' : '#e2e8f0',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Velocity Chart
+            const velocityCtx = document.getElementById('velocityChart');
+            if (velocityCtx) {
+                charts.velocity = new Chart(velocityCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Hires',
+                            data: [42, 38, 45, 51, 48, 55],
+                            borderColor: '#14b8a6',
+                            backgroundColor: 'rgba(20, 184, 166, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#14b8a6',
+                            pointBorderColor: isDark ? '#1e293b' : '#ffffff',
+                            pointBorderWidth: 2
+                        }, {
+                            label: 'Target',
+                            data: [40, 42, 44, 46, 48, 50],
+                            borderColor: '#94a3b8',
+                            borderDash: [5, 5],
+                            tension: 0.4,
+                            pointRadius: 0,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                                titleColor: isDark ? '#f8fafc' : '#0f172a',
+                                bodyColor: isDark ? '#cbd5e1' : '#475569',
+                                borderColor: isDark ? '#334155' : '#e2e8f0',
+                                borderWidth: 1,
+                                padding: 12
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: textColor, font: { size: 11 } }
+                            },
+                            y: {
+                                grid: { color: gridColor },
+                                ticks: { color: textColor, font: { size: 11 } },
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // ==================== CANDIDATES ====================
+        function renderCandidates() {
+            const tbody = document.getElementById('candidateTableBody');
+            const filtered = candidates.filter(c => {
+                if (riskFilter === 'all') return true;
+                return c.status.toLowerCase().includes(riskFilter);
+            }).filter(c => {
+                const search = document.getElementById('candidateSearch')?.value.toLowerCase() || '';
+                return !search || c.name.toLowerCase().includes(search) || c.position.toLowerCase().includes(search);
+            });
+
+            document.getElementById('showingCount').textContent = filtered.length;
+
+            tbody.innerHTML = filtered.map(c => `
+                <tr class="table-row cursor-pointer" onclick="selectCandidate(${c.id})">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-navy-600 to-navy-800 flex items-center justify-center text-white text-sm font-semibold">
+                                ${c.name.split(' ').map(n => n[0]).join('')}
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-slate-900 dark:text-white">${c.name}</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">${c.email}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">${c.position}</td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            ${c.stage}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">${c.lastActivity}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full ${c.riskScore > 70 ? 'bg-red-500' : c.riskScore > 40 ? 'bg-amber-500' : 'bg-emerald-500'}" style="width: ${c.riskScore}%"></div>
+                            </div>
+                            <span class="text-sm font-semibold ${c.riskScore > 70 ? 'text-red-600 dark:text-red-400' : c.riskScore > 40 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${c.riskScore}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${c.status === 'High Risk' ? 'risk-high' : c.status === 'Medium Risk' ? 'risk-medium' : 'risk-low'}">
+                            <span class="status-dot ${c.status === 'High Risk' ? 'bg-red-500' : c.status === 'Medium Risk' ? 'bg-amber-500' : 'bg-emerald-500'}"></span>
+                            ${c.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <button onclick="event.stopPropagation(); selectCandidate(${c.id})" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        function filterCandidates() {
+            renderCandidates();
+        }
+
+        function setRiskFilter(filter) {
+            riskFilter = filter;
+            // Update button styles
+            ['all', 'high', 'medium', 'low'].forEach(f => {
+                const btn = document.getElementById(`filter-${f}`);
+                if (f === filter) {
+                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 transition-colors';
+                } else {
+                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors';
+                }
+            });
+            renderCandidates();
+        }
+
+        function refreshCandidates() {
+            showToast('Candidate data refreshed', 'success');
+            renderCandidates();
+        }
+
+        // ==================== CANDIDATE DRAWER ====================
+        function selectCandidate(id) {
+            selectedCandidate = candidates.find(c => c.id === id);
+            if (!selectedCandidate) return;
+
+            const drawer = document.getElementById('candidateDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            const content = document.getElementById('drawerContent');
+
+            content.innerHTML = `
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-navy-600 to-navy-800 flex items-center justify-center text-white text-lg font-semibold">
+                            ${selectedCandidate.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-900 dark:text-white">${selectedCandidate.name}</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">${selectedCandidate.position}</p>
+                        </div>
+                    </div>
+                    <button onclick="closeDrawer()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
+                            <p class="text-xs text-slate-500 dark:text-slate-400 uppercase">Stage</p>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white mt-1">${selectedCandidate.stage}</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
+                            <p class="text-xs text-slate-500 dark:text-slate-400 uppercase">Applied</p>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white mt-1">${selectedCandidate.applied}</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
+                            <p class="text-xs text-slate-500 dark:text-slate-400 uppercase">Location</p>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white mt-1">${selectedCandidate.location}</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
+                            <p class="text-xs text-slate-500 dark:text-slate-400 uppercase">Phone</p>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white mt-1">${selectedCandidate.phone}</p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-xl ${selectedCandidate.riskScore > 70 ? 'bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50' : selectedCandidate.riskScore > 40 ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50' : 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50'}">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-slate-900 dark:text-white">Risk Assessment</h4>
+                            <span class="text-2xl font-bold ${selectedCandidate.riskScore > 70 ? 'text-red-600 dark:text-red-400' : selectedCandidate.riskScore > 40 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${selectedCandidate.riskScore}%</span>
+                        </div>
+                        <div class="w-full h-3 bg-white/50 dark:bg-black/20 rounded-full overflow-hidden mb-3">
+                            <div class="h-full rounded-full ${selectedCandidate.riskScore > 70 ? 'bg-red-500' : selectedCandidate.riskScore > 40 ? 'bg-amber-500' : 'bg-emerald-500'}" style="width: ${selectedCandidate.riskScore}%"></div>
+                        </div>
+                        <div class="space-y-2">
+                            ${selectedCandidate.factors.map(f => `
+                                <div class="flex items-start gap-2">
+                                    <i data-lucide="alert-circle" class="w-4 h-4 ${selectedCandidate.riskScore > 70 ? 'text-red-500' : selectedCandidate.riskScore > 40 ? 'text-amber-500' : 'text-emerald-500'} mt-0.5 shrink-0"></i>
+                                    <p class="text-sm text-slate-700 dark:text-slate-300">${f}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-slate-900 dark:text-white mb-3">Recommended Actions</h4>
+                        <div class="space-y-2">
+                            ${selectedCandidate.actions.map((a, i) => `
+                                <div class="flex items-center gap-3 p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                                    <div class="w-6 h-6 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-700 dark:text-teal-400 text-xs font-bold">${i + 1}</div>
+                                    <p class="text-sm text-slate-700 dark:text-slate-300 flex-1">${a}</p>
+                                    <button onclick="showToast('Action marked as complete', 'success')" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors">
+                                        <i data-lucide="check" class="w-4 h-4 text-slate-400"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <button onclick="navigate('intelligence'); closeDrawer();" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="brain-circuit" class="w-4 h-4"></i>
+                        View Full AI Analysis
+                    </button>
+                </div>
+            `;
+
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+            drawer.classList.remove('translate-x-full');
+            lucide.createIcons();
+        }
+
+        function closeDrawer() {
+            const drawer = document.getElementById('candidateDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            drawer.classList.add('translate-x-full');
+            overlay.classList.add('opacity-0');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        // ==================== INTELLIGENCE CENTER ====================
+        function renderIntelligence(candidate) {
+            const container = document.getElementById('intelligenceContent');
+            
+            container.innerHTML = `
+                <!-- Candidate Header -->
+                <div class="lg:col-span-3 bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-full bg-gradient-to-br from-navy-600 to-navy-800 flex items-center justify-center text-white text-xl font-semibold">
+                        ${candidate.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-slate-900 dark:text-white">${candidate.name}</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">${candidate.position} • ${candidate.stage}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-3xl font-bold ${candidate.riskScore > 70 ? 'text-red-600 dark:text-red-400' : candidate.riskScore > 40 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${candidate.riskScore}%</p>
+                        <p class="text-xs text-slate-500 uppercase">Risk Score</p>
+                    </div>
+                </div>
+
+                <!-- AI Insight Panel -->
+                <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="sparkles" class="w-5 h-5 text-teal-500"></i>
+                        <h3 class="font-semibold text-slate-900 dark:text-white">AI Insight Panel</h3>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-slate-600 dark:text-slate-400">AI Confidence Score</span>
+                            <span class="text-sm font-bold text-teal-600 dark:text-teal-400">94%</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-teal-400 to-teal-600 rounded-full" style="width: 94%"></div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Contributing Factors</h4>
+                            <div class="space-y-2">
+                                ${candidate.factors.map((f, i) => `
+                                    <div class="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                                        <span class="w-5 h-5 rounded-full ${i < 2 ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'} flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">${i + 1}</span>
+                                        <p class="text-sm text-slate-700 dark:text-slate-300">${f}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Trend Indicators</h4>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="p-3 rounded-lg border border-red-200 dark:border-red-800/50 bg-red-50/50 dark:bg-red-900/10 text-center">
+                                    <i data-lucide="trending-down" class="w-5 h-5 text-red-500 mx-auto mb-1"></i>
+                                    <p class="text-xs text-slate-600 dark:text-slate-400">Engagement</p>
+                                    <p class="text-sm font-bold text-red-600 dark:text-red-400">Declining</p>
+                                </div>
+                                <div class="p-3 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-900/10 text-center">
+                                    <i data-lucide="clock" class="w-5 h-5 text-amber-500 mx-auto mb-1"></i>
+                                    <p class="text-xs text-slate-600 dark:text-slate-400">Response Time</p>
+                                    <p class="text-sm font-bold text-amber-600 dark:text-amber-400">5.2 Days</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recommended Actions -->
+                <div class="lg:col-span-1 bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <h3 class="font-semibold text-slate-900 dark:text-white mb-4">Recommended Actions</h3>
+                    <div class="space-y-3">
+                        ${candidate.actions.map((a, i) => `
+                            <div class="p-4 rounded-lg border ${i === 0 ? 'border-red-200 dark:border-red-800/50 bg-red-50/50 dark:bg-red-900/10 priority-high' : i === 1 ? 'border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-900/10 priority-medium' : 'border-blue-200 dark:border-blue-800/50 bg-blue-50/50 dark:bg-blue-900/10 priority-low'}">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-8 h-8 rounded-lg ${i === 0 ? 'bg-red-100 dark:bg-red-900/30' : i === 1 ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-blue-100 dark:bg-blue-900/30'} flex items-center justify-center shrink-0">
+                                        <i data-lucide="${i === 0 ? 'phone' : i === 1 ? 'mail' : 'calendar'}" class="w-4 h-4 ${i === 0 ? 'text-red-600 dark:text-red-400' : i === 1 ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'}"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-900 dark:text-white">${a}</p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${i === 0 ? 'Within 24 hours' : i === 1 ? 'Immediate action' : 'Schedule this week'}</p>
+                                    </div>
+                                </div>
+                                <button onclick="showToast('Action assigned to team', 'success')" class="mt-3 w-full py-2 rounded-lg text-xs font-medium ${i === 0 ? 'bg-red-600 hover:bg-red-700 text-white' : i === 1 ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'} transition-colors">
+                                    Assign Action
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // ==================== HEATMAP ====================
+        function renderHeatmap() {
+            const grid = document.getElementById('heatmapGrid');
+            const stages = ['Application', 'Screening', 'Interview', 'Offer', 'Hire'];
+            
+            grid.innerHTML = heatmapData.map(row => `
+                <div class="grid grid-cols-6 gap-1">
+                    <div class="text-xs font-medium text-slate-600 dark:text-slate-400 p-2 flex items-center">${row.dept}</div>
+                    ${row.values.map((v, i) => {
+                        const color = v <= 2 ? 'bg-emerald-500' : v === 3 ? 'bg-amber-500' : 'bg-red-500';
+                        const opacity = v === 1 ? 'opacity-40' : v === 2 ? 'opacity-70' : 'opacity-100';
+                        return `<div class="heatmap-cell ${color} ${opacity} h-10 rounded flex items-center justify-center cursor-pointer" title="${row.dept} - ${stages[i]}: ${v === 1 ? 'Optimal' : v === 2 ? 'Good' : v === 3 ? 'Warning' : 'Critical'}">
+                            <span class="text-xs font-bold text-white">${v}</span>
+                        </div>`;
+                    }).join('')}
+                </div>
+            `).join('');
+        }
+
+        // ==================== ACTIONS CENTER ====================
+        function renderActions() {
+            const container = document.getElementById('actionsContainer');
+            const filtered = actions.filter(a => actionFilter === 'all' || a.priority === actionFilter);
+
+            container.innerHTML = filtered.map(a => `
+                <div class="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm card-hover ${a.priority === 'high' ? 'priority-high' : a.priority === 'medium' ? 'priority-medium' : 'priority-low'}">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h4 class="font-semibold text-slate-900 dark:text-white text-lg">${a.role}</h4>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Predicted: ${a.prediction}</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold ${a.priority === 'high' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' : a.priority === 'medium' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}">
+                            ${a.probability}% Probability
+                        </span>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-slate-500 dark:text-slate-400">Risk Probability</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full ${a.priority === 'high' ? 'bg-red-500' : a.priority === 'medium' ? 'bg-amber-500' : 'bg-blue-500'} rounded-full transition-all duration-1000" style="width: ${a.probability}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Recommended Actions</p>
+                        ${a.actions.map((action, i) => `
+                            <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                                <div class="w-6 h-6 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-700 dark:text-teal-400 text-xs font-bold">${i + 1}</div>
+                                <p class="text-sm text-slate-700 dark:text-slate-300">${action}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="flex gap-2 mt-4">
+                        <button onclick="showToast('Action plan activated', 'success')" class="flex-1 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors">
+                            Activate Plan
+                        </button>
+                        <button onclick="showToast('Added to watchlist', 'info')" class="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                            <i data-lucide="bookmark" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function filterActions(filter) {
+            actionFilter = filter;
+            ['all', 'high', 'medium'].forEach(f => {
+                const btn = document.getElementById(`action-filter-${f}`);
+                if (f === filter) {
+                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900';
+                } else {
+                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors';
+                }
+            });
+            renderActions();
+        }
+
+        // ==================== NOTIFICATIONS ====================
+        function toggleNotifications() {
+            const panel = document.getElementById('notificationsPanel');
+            if (panel.classList.contains('translate-x-full')) {
+                panel.classList.remove('translate-x-full');
+            } else {
+                panel.classList.add('translate-x-full');
+            }
+        }
+
+        // ==================== EXPORT ====================
+        function exportReport() {
+            showToast('Executive Summary downloaded', 'success');
+            // Create a mock download
+            const content = `TALENTPULSE AI - EXECUTIVE SUMMARY\nGenerated: ${new Date().toLocaleString()}\n\nACTIVE REQUISITIONS: 124\nTOTAL CANDIDATES: 2,847\nHIGH RISK: 186\nOFFER ACCEPTANCE: 87%\nAVG TIME TO FILL: 31 Days\n\nRECRUITMENT HEALTH SCORE: 82/100\n\nThis report contains confidential recruitment intelligence data.`;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `TalentPulse_Executive_Summary_${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ==================== TOAST ====================
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-emerald-500',
+                error: 'bg-red-500',
+                info: 'bg-navy-800 dark:bg-slate-800',
+                warning: 'bg-amber-500'
+            };
+            const icons = {
+                success: 'check-circle',
+                error: 'x-circle',
+                info: 'info',
+                warning: 'alert-triangle'
+            };
+            
+            toast.className = `toast flex items-center gap-3 px-4 py-3 ${colors[type]} text-white rounded-lg shadow-lg text-sm font-medium min-w-[300px]`;
+            toast.innerHTML = `
+                <i data-lucide="${icons[type]}" class="w-4 h-4"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease-out';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ==================== RESPONSIVE ====================
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 1024) {
+                document.getElementById('sidebar').classList.remove('-translate-x-full');
+                document.getElementById('sidebarOverlay').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
