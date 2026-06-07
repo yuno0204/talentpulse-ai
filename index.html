@@ -2,7 +2,7 @@
 <html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TalentPulse AI — Recruitment Intelligence Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -55,7 +55,7 @@
             --warning: #f59e0b;
             --danger: #ef4444;
         }
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
         .glass-panel {
             background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(12px);
@@ -86,8 +86,11 @@
         .risk-low { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); color: #065f46; border: 1px solid #a7f3d0; }
         .dark .risk-low { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); color: #6ee7b7; border: 1px solid #059669; }
         .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-        .drawer-overlay { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
-        .chart-container { position: relative; height: 280px; width: 100%; }
+        .drawer-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+        .chart-container { position: relative; height: 260px; width: 100%; cursor: pointer; }
+        @media (max-width: 640px) { .chart-container { height: 220px; } }
+        .chart-container canvas { transition: transform 0.2s ease; }
+        .chart-container:active canvas { transform: scale(0.98); }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .pipeline-bar { height: 8px; border-radius: 4px; transition: width 1s ease-out; }
@@ -121,6 +124,23 @@
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+        .chart-detail-panel {
+            animation: panelSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes panelSlide {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .segment-pulse {
+            animation: segmentPulse 0.4s ease-out;
+        }
+        @keyframes segmentPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .touch-target { min-height: 44px; min-width: 44px; }
+        .touch-target-sm { min-height: 36px; min-width: 36px; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 transition-colors duration-300">
@@ -129,8 +149,8 @@
     <div id="app" class="flex h-screen overflow-hidden">
 
         <!-- Sidebar -->
-        <aside id="sidebar" class="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transition-all duration-300 z-40">
-            <div class="p-6 border-b border-slate-200 dark:border-slate-800">
+        <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-72 lg:w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0 shadow-2xl lg:shadow-none">
+            <div class="p-5 lg:p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between lg:block">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center shadow-lg shadow-teal-500/20">
                         <i data-lucide="activity" class="w-5 h-5 text-white"></i>
@@ -140,44 +160,46 @@
                         <p class="text-[10px] uppercase tracking-widest text-teal-600 font-semibold">AI</p>
                     </div>
                 </div>
-                <p class="mt-3 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Transforming Recruitment from Reactive to Predictive</p>
+                <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 touch-target flex items-center justify-center">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
             </div>
 
             <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-hide">
-                <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-                    Executive Dashboard
+                <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-item active w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors touch-target">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                    <span>Executive Dashboard</span>
                 </button>
-                <button onclick="navigate('candidates')" id="nav-candidates" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                    <i data-lucide="users" class="w-4 h-4"></i>
-                    Candidate Pulse
+                <button onclick="navigate('candidates')" id="nav-candidates" class="nav-item w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors touch-target">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                    <span>Candidate Pulse</span>
                 </button>
-                <button onclick="navigate('intelligence')" id="nav-intelligence" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                    <i data-lucide="brain-circuit" class="w-4 h-4"></i>
-                    AI Intelligence
+                <button onclick="navigate('intelligence')" id="nav-intelligence" class="nav-item w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors touch-target">
+                    <i data-lucide="brain-circuit" class="w-5 h-5"></i>
+                    <span>AI Intelligence</span>
                 </button>
-                <button onclick="navigate('bottlenecks')" id="nav-bottlenecks" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                    <i data-lucide="git-merge" class="w-4 h-4"></i>
-                    Bottleneck Monitor
+                <button onclick="navigate('bottlenecks')" id="nav-bottlenecks" class="nav-item w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors touch-target">
+                    <i data-lucide="git-merge" class="w-5 h-5"></i>
+                    <span>Bottleneck Monitor</span>
                 </button>
-                <button onclick="navigate('actions')" id="nav-actions" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                    <i data-lucide="zap" class="w-4 h-4"></i>
-                    Action Center
+                <button onclick="navigate('actions')" id="nav-actions" class="nav-item w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors touch-target">
+                    <i data-lucide="zap" class="w-5 h-5"></i>
+                    <span>Action Center</span>
                 </button>
             </nav>
 
             <div class="p-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
                 <div class="bg-slate-100 dark:bg-slate-800/50 rounded-lg p-3">
                     <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider">Current Role</p>
-                    <select id="roleSelector" onchange="switchRole(this.value)" class="w-full text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:text-white">
+                    <select id="roleSelector" onchange="switchRole(this.value)" class="w-full text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:text-white touch-target">
                         <option value="recruiter">Recruiter View</option>
                         <option value="manager" selected>Recruitment Manager</option>
                         <option value="executive">Client Leadership</option>
                     </select>
                 </div>
-                <button onclick="toggleTheme()" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                    <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
-                    <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+                <button onclick="toggleTheme()" class="w-full flex items-center gap-2 px-3 py-3 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors touch-target">
+                    <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
+                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
                     <span class="dark:hidden">Dark Mode</span>
                     <span class="hidden dark:block">Light Mode</span>
                 </button>
@@ -185,140 +207,140 @@
         </aside>
 
         <!-- Mobile Sidebar Overlay -->
-        <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
+        <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 hidden lg:hidden transition-opacity duration-300 opacity-0"></div>
 
         <!-- Main Content -->
-        <main class="flex-1 flex flex-col overflow-hidden">
+        <main class="flex-1 flex flex-col overflow-hidden min-w-0">
             <!-- Header -->
-            <header class="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 z-20">
-                <div class="flex items-center gap-4">
-                    <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+            <header class="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 lg:px-6 z-20 shrink-0">
+                <div class="flex items-center gap-3 min-w-0">
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 touch-target flex items-center justify-center shrink-0">
                         <i data-lucide="menu" class="w-5 h-5"></i>
                     </button>
-                    <div>
-                        <h2 id="pageTitle" class="text-xl font-semibold text-slate-900 dark:text-white">Executive Dashboard</h2>
-                        <p id="pageSubtitle" class="text-xs text-slate-500 dark:text-slate-400">Real-time recruitment intelligence overview</p>
+                    <div class="min-w-0">
+                        <h2 id="pageTitle" class="text-lg lg:text-xl font-semibold text-slate-900 dark:text-white truncate">Executive Dashboard</h2>
+                        <p id="pageSubtitle" class="text-xs text-slate-500 dark:text-slate-400 truncate hidden sm:block">Real-time recruitment intelligence overview</p>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    <button onclick="exportReport()" class="hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                <div class="flex items-center gap-2 lg:gap-3 shrink-0">
+                    <button onclick="exportReport()" class="hidden md:flex items-center gap-2 px-3 lg:px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors touch-target">
                         <i data-lucide="download" class="w-4 h-4"></i>
-                        Export Report
+                        <span class="hidden lg:inline">Export Report</span>
                     </button>
-                    <button onclick="toggleNotifications()" class="relative p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <button onclick="toggleNotifications()" class="relative p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors touch-target flex items-center justify-center">
                         <i data-lucide="bell" class="w-5 h-5 text-slate-600 dark:text-slate-400"></i>
-                        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                        <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
                     </button>
-                    <div class="flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-slate-700">
-                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-navy-600 to-navy-800 flex items-center justify-center text-white text-sm font-semibold">JD</div>
-                        <div class="hidden md:block">
-                            <p class="text-sm font-medium text-slate-900 dark:text-white">Jane Doe</p>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Recruitment Manager</p>
+                    <div class="flex items-center gap-2 lg:gap-3 pl-2 lg:pl-3 border-l border-slate-200 dark:border-slate-700">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-navy-600 to-navy-800 flex items-center justify-center text-white text-sm font-semibold shrink-0">JD</div>
+                        <div class="hidden md:block min-w-0">
+                            <p class="text-sm font-medium text-slate-900 dark:text-white truncate">Jane Doe</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 truncate">Recruitment Manager</p>
                         </div>
                     </div>
                 </div>
             </header>
 
             <!-- Content Area -->
-            <div id="contentArea" class="flex-1 overflow-y-auto p-6 scrollbar-hide">
+            <div id="contentArea" class="flex-1 overflow-y-auto p-4 lg:p-6 scrollbar-hide">
                 
                 <!-- PAGE 1: EXECUTIVE DASHBOARD -->
-                <div id="page-dashboard" class="page-content animate-fade-in space-y-6">
+                <div id="page-dashboard" class="page-content animate-fade-in space-y-4 lg:space-y-6">
                     <!-- KPI Cards -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                        <div class="kpi-card bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm card-hover">
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Requisitions</span>
+                    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4">
+                        <div class="kpi-card bg-white dark:bg-slate-900 rounded-xl p-4 lg:p-5 border border-slate-200 dark:border-slate-800 shadow-sm card-hover col-span-2 lg:col-span-1 cursor-pointer" onclick="kpiClick('requisitions')">
+                            <div class="flex items-center justify-between mb-2 lg:mb-3">
+                                <span class="text-[10px] lg:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Requisitions</span>
                                 <div class="p-1.5 bg-teal-50 dark:bg-teal-900/30 rounded-lg">
                                     <i data-lucide="briefcase" class="w-4 h-4 text-teal-600 dark:text-teal-400"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl font-bold text-slate-900 dark:text-white">124</p>
-                            <div class="flex items-center gap-1 mt-2">
+                            <p class="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white">124</p>
+                            <div class="flex items-center gap-1 mt-1 lg:mt-2">
                                 <span class="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-0.5">
                                     <i data-lucide="trending-up" class="w-3 h-3"></i> +8%
                                 </span>
-                                <span class="text-xs text-slate-400">vs last month</span>
+                                <span class="text-[10px] lg:text-xs text-slate-400">vs last month</span>
                             </div>
                         </div>
 
-                        <div class="kpi-card bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm card-hover">
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Candidates</span>
+                        <div class="kpi-card bg-white dark:bg-slate-900 rounded-xl p-4 lg:p-5 border border-slate-200 dark:border-slate-800 shadow-sm card-hover cursor-pointer" onclick="kpiClick('candidates')">
+                            <div class="flex items-center justify-between mb-2 lg:mb-3">
+                                <span class="text-[10px] lg:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Candidates</span>
                                 <div class="p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
                                     <i data-lucide="users" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl font-bold text-slate-900 dark:text-white">2,847</p>
-                            <div class="flex items-center gap-1 mt-2">
+                            <p class="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white">2,847</p>
+                            <div class="flex items-center gap-1 mt-1 lg:mt-2">
                                 <span class="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-0.5">
                                     <i data-lucide="trending-up" class="w-3 h-3"></i> +12%
                                 </span>
-                                <span class="text-xs text-slate-400">vs last month</span>
+                                <span class="text-[10px] lg:text-xs text-slate-400">vs last month</span>
                             </div>
                         </div>
 
-                        <div class="kpi-card bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm card-hover">
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">High Risk Candidates</span>
+                        <div class="kpi-card bg-white dark:bg-slate-900 rounded-xl p-4 lg:p-5 border border-slate-200 dark:border-slate-800 shadow-sm card-hover cursor-pointer" onclick="kpiClick('highrisk')">
+                            <div class="flex items-center justify-between mb-2 lg:mb-3">
+                                <span class="text-[10px] lg:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">High Risk</span>
                                 <div class="p-1.5 bg-red-50 dark:bg-red-900/30 rounded-lg">
                                     <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 dark:text-red-400"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl font-bold text-red-600 dark:text-red-400">186</p>
-                            <div class="flex items-center gap-1 mt-2">
+                            <p class="text-xl lg:text-2xl font-bold text-red-600 dark:text-red-400">186</p>
+                            <div class="flex items-center gap-1 mt-1 lg:mt-2">
                                 <span class="text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-0.5">
                                     <i data-lucide="trending-up" class="w-3 h-3"></i> +5%
                                 </span>
-                                <span class="text-xs text-slate-400">vs last week</span>
+                                <span class="text-[10px] lg:text-xs text-slate-400">vs last week</span>
                             </div>
                         </div>
 
-                        <div class="kpi-card bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm card-hover">
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Offer Acceptance</span>
+                        <div class="kpi-card bg-white dark:bg-slate-900 rounded-xl p-4 lg:p-5 border border-slate-200 dark:border-slate-800 shadow-sm card-hover cursor-pointer" onclick="kpiClick('offer')">
+                            <div class="flex items-center justify-between mb-2 lg:mb-3">
+                                <span class="text-[10px] lg:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Offer Acceptance</span>
                                 <div class="p-1.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg">
                                     <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl font-bold text-slate-900 dark:text-white">87%</p>
-                            <div class="flex items-center gap-1 mt-2">
+                            <p class="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white">87%</p>
+                            <div class="flex items-center gap-1 mt-1 lg:mt-2">
                                 <span class="text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-0.5">
                                     <i data-lucide="trending-down" class="w-3 h-3"></i> -2%
                                 </span>
-                                <span class="text-xs text-slate-400">vs last month</span>
+                                <span class="text-[10px] lg:text-xs text-slate-400">vs last month</span>
                             </div>
                         </div>
 
-                        <div class="kpi-card bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm card-hover">
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Avg Time to Fill</span>
+                        <div class="kpi-card bg-white dark:bg-slate-900 rounded-xl p-4 lg:p-5 border border-slate-200 dark:border-slate-800 shadow-sm card-hover cursor-pointer" onclick="kpiClick('timefill')">
+                            <div class="flex items-center justify-between mb-2 lg:mb-3">
+                                <span class="text-[10px] lg:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Avg Time to Fill</span>
                                 <div class="p-1.5 bg-amber-50 dark:bg-amber-900/30 rounded-lg">
                                     <i data-lucide="clock" class="w-4 h-4 text-amber-600 dark:text-amber-400"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl font-bold text-slate-900 dark:text-white">31 Days</p>
-                            <div class="flex items-center gap-1 mt-2">
+                            <p class="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white">31 Days</p>
+                            <div class="flex items-center gap-1 mt-1 lg:mt-2">
                                 <span class="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-0.5">
                                     <i data-lucide="trending-down" class="w-3 h-3"></i> -3 days
                                 </span>
-                                <span class="text-xs text-slate-400">vs last month</span>
+                                <span class="text-[10px] lg:text-xs text-slate-400">vs last month</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Main Charts Row -->
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
                         <!-- Health Score -->
-                        <div class="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-                            <div class="flex items-center justify-between mb-6">
-                                <h3 class="font-semibold text-slate-900 dark:text-white">Recruitment Health Score</h3>
+                        <div class="bg-white dark:bg-slate-900 rounded-xl p-5 lg:p-6 border border-slate-200 dark:border-slate-800 shadow-sm card-hover cursor-pointer" onclick="showHealthDetail()">
+                            <div class="flex items-center justify-between mb-4 lg:mb-6">
+                                <h3 class="font-semibold text-slate-900 dark:text-white text-sm lg:text-base">Recruitment Health Score</h3>
                                 <span class="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold rounded-full">Good</span>
                             </div>
                             <div class="flex items-center justify-center">
-                                <div class="relative w-48 h-48">
-                                    <svg class="w-full h-full transform -rotate-90">
+                                <div class="relative w-40 h-40 lg:w-48 lg:h-48">
+                                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 192 192">
                                         <circle cx="96" cy="96" r="88" stroke="currentColor" stroke-width="12" fill="none" class="text-slate-100 dark:text-slate-800" />
                                         <circle cx="96" cy="96" r="88" stroke="url(#healthGradient)" stroke-width="12" fill="none" stroke-dasharray="553" stroke-dashoffset="99" stroke-linecap="round" class="transition-all duration-1000" />
                                         <defs>
@@ -329,118 +351,140 @@
                                         </defs>
                                     </svg>
                                     <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                        <span class="text-4xl font-bold text-slate-900 dark:text-white">82</span>
+                                        <span class="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white">82</span>
                                         <span class="text-xs text-slate-500 dark:text-slate-400 mt-1">out of 100</span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="mt-6 grid grid-cols-3 gap-2 text-center">
-                                <div class="p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
-                                    <p class="text-lg font-bold text-emerald-600 dark:text-emerald-400">74</p>
+                            <div class="mt-4 lg:mt-6 grid grid-cols-3 gap-2 text-center">
+                                <div class="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors cursor-pointer" onclick="event.stopPropagation(); showToast('Quality Score: 74 — Above industry average', 'info')">
+                                    <p class="text-base lg:text-lg font-bold text-emerald-600 dark:text-emerald-400">74</p>
                                     <p class="text-[10px] text-slate-500 uppercase">Quality</p>
                                 </div>
-                                <div class="p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
-                                    <p class="text-lg font-bold text-teal-600 dark:text-teal-400">88</p>
+                                <div class="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors cursor-pointer" onclick="event.stopPropagation(); showToast('Speed Score: 88 — Excellent pipeline velocity', 'info')">
+                                    <p class="text-base lg:text-lg font-bold text-teal-600 dark:text-teal-400">88</p>
                                     <p class="text-[10px] text-slate-500 uppercase">Speed</p>
                                 </div>
-                                <div class="p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
-                                    <p class="text-lg font-bold text-amber-600 dark:text-amber-400">84</p>
+                                <div class="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors cursor-pointer" onclick="event.stopPropagation(); showToast('Cost Score: 84 — Within budget targets', 'info')">
+                                    <p class="text-base lg:text-lg font-bold text-amber-600 dark:text-amber-400">84</p>
                                     <p class="text-[10px] text-slate-500 uppercase">Cost</p>
                                 </div>
                             </div>
+                            <p class="text-xs text-center text-slate-400 mt-3 flex items-center justify-center gap-1">
+                                <i data-lucide="mouse-pointer-click" class="w-3 h-3"></i>
+                                Tap for details
+                            </p>
                         </div>
 
                         <!-- Risk Distribution -->
-                        <div class="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-                            <h3 class="font-semibold text-slate-900 dark:text-white mb-4">Candidate Risk Distribution</h3>
-                            <div class="chart-container">
+                        <div class="bg-white dark:bg-slate-900 rounded-xl p-5 lg:p-6 border border-slate-200 dark:border-slate-800 shadow-sm card-hover">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-semibold text-slate-900 dark:text-white text-sm lg:text-base">Candidate Risk Distribution</h3>
+                                <button onclick="resetChartFilter()" id="chartFilterReset" class="hidden px-2 py-1 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 text-xs font-semibold rounded-lg transition-colors">
+                                    Reset Filter
+                                </button>
+                            </div>
+                            <div class="chart-container" id="riskChartContainer">
                                 <canvas id="riskChart"></canvas>
                             </div>
-                            <div class="mt-4 flex justify-center gap-6">
-                                <div class="flex items-center gap-2">
+                            <div class="mt-4 flex justify-center gap-4 lg:gap-6 flex-wrap">
+                                <button onclick="setRiskFilter('high')" class="flex items-center gap-2 hover:opacity-80 transition-opacity touch-target-sm">
                                     <span class="w-3 h-3 rounded-full bg-red-500"></span>
-                                    <span class="text-xs text-slate-600 dark:text-slate-400">High Risk (186)</span>
-                                </div>
-                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-slate-600 dark:text-slate-400">High (186)</span>
+                                </button>
+                                <button onclick="setRiskFilter('medium')" class="flex items-center gap-2 hover:opacity-80 transition-opacity touch-target-sm">
                                     <span class="w-3 h-3 rounded-full bg-amber-500"></span>
                                     <span class="text-xs text-slate-600 dark:text-slate-400">Medium (423)</span>
-                                </div>
-                                <div class="flex items-center gap-2">
+                                </button>
+                                <button onclick="setRiskFilter('low')" class="flex items-center gap-2 hover:opacity-80 transition-opacity touch-target-sm">
                                     <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
                                     <span class="text-xs text-slate-600 dark:text-slate-400">Low (2,238)</span>
-                                </div>
+                                </button>
                             </div>
+                            <p class="text-xs text-center text-slate-400 mt-3 flex items-center justify-center gap-1">
+                                <i data-lucide="mouse-pointer-click" class="w-3 h-3"></i>
+                                Tap chart segments to filter
+                            </p>
                         </div>
 
                         <!-- Hiring Velocity -->
-                        <div class="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-                            <h3 class="font-semibold text-slate-900 dark:text-white mb-4">Hiring Velocity Trend</h3>
-                            <div class="chart-container">
+                        <div class="bg-white dark:bg-slate-900 rounded-xl p-5 lg:p-6 border border-slate-200 dark:border-slate-800 shadow-sm card-hover">
+                            <h3 class="font-semibold text-slate-900 dark:text-white text-sm lg:text-base mb-4">Hiring Velocity Trend</h3>
+                            <div class="chart-container" id="velocityChartContainer">
                                 <canvas id="velocityChart"></canvas>
                             </div>
-                            <div class="mt-4 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                            <div class="mt-4 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-2">
                                 <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
                             </div>
+                            <p class="text-xs text-center text-slate-400 mt-3 flex items-center justify-center gap-1">
+                                <i data-lucide="mouse-pointer-click" class="w-3 h-3"></i>
+                                Tap data points for monthly breakdown
+                            </p>
                         </div>
                     </div>
 
+                    <!-- Chart Detail Panel (appears when chart is clicked) -->
+                    <div id="chartDetailPanel" class="hidden chart-detail-panel">
+                        <!-- Populated by JS -->
+                    </div>
+
                     <!-- Pipeline & Insights Row -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                         <!-- Pipeline Health -->
-                        <div class="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-                            <h3 class="font-semibold text-slate-900 dark:text-white mb-6">Pipeline Health Visualization</h3>
-                            <div class="space-y-6">
-                                <div>
+                        <div class="bg-white dark:bg-slate-900 rounded-xl p-5 lg:p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <h3 class="font-semibold text-slate-900 dark:text-white text-sm lg:text-base mb-4 lg:mb-6">Pipeline Health Visualization</h3>
+                            <div class="space-y-4 lg:space-y-6">
+                                <div class="cursor-pointer group" onclick="showPipelineDetail('Screening')">
                                     <div class="flex justify-between text-sm mb-2">
-                                        <span class="text-slate-600 dark:text-slate-400 font-medium">Screening</span>
-                                        <span class="text-slate-900 dark:text-white font-semibold">847 candidates</span>
+                                        <span class="text-slate-600 dark:text-slate-400 font-medium group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">Screening</span>
+                                        <span class="text-slate-900 dark:text-white font-semibold">847</span>
                                     </div>
                                     <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                        <div class="h-full bg-gradient-to-r from-teal-400 to-teal-600 rounded-full pipeline-bar" style="width: 100%"></div>
+                                        <div class="h-full bg-gradient-to-r from-teal-400 to-teal-600 rounded-full pipeline-bar group-hover:brightness-110 transition-all" style="width: 100%"></div>
                                     </div>
                                 </div>
-                                <div>
+                                <div class="cursor-pointer group" onclick="showPipelineDetail('Interview')">
                                     <div class="flex justify-between text-sm mb-2">
-                                        <span class="text-slate-600 dark:text-slate-400 font-medium">Interview</span>
-                                        <span class="text-slate-900 dark:text-white font-semibold">432 candidates</span>
+                                        <span class="text-slate-600 dark:text-slate-400 font-medium group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">Interview</span>
+                                        <span class="text-slate-900 dark:text-white font-semibold">432</span>
                                     </div>
                                     <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                        <div class="h-full bg-gradient-to-r from-teal-500 to-teal-700 rounded-full pipeline-bar" style="width: 51%"></div>
+                                        <div class="h-full bg-gradient-to-r from-teal-500 to-teal-700 rounded-full pipeline-bar group-hover:brightness-110 transition-all" style="width: 51%"></div>
                                     </div>
                                 </div>
-                                <div>
+                                <div class="cursor-pointer group" onclick="showPipelineDetail('Offer')">
                                     <div class="flex justify-between text-sm mb-2">
-                                        <span class="text-slate-600 dark:text-slate-400 font-medium">Offer</span>
-                                        <span class="text-slate-900 dark:text-white font-semibold">186 candidates</span>
+                                        <span class="text-slate-600 dark:text-slate-400 font-medium group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">Offer</span>
+                                        <span class="text-slate-900 dark:text-white font-semibold">186</span>
                                     </div>
                                     <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                        <div class="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full pipeline-bar" style="width: 22%"></div>
+                                        <div class="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full pipeline-bar group-hover:brightness-110 transition-all" style="width: 22%"></div>
                                     </div>
                                 </div>
-                                <div>
+                                <div class="cursor-pointer group" onclick="showPipelineDetail('Hired')">
                                     <div class="flex justify-between text-sm mb-2">
-                                        <span class="text-slate-600 dark:text-slate-400 font-medium">Hired</span>
-                                        <span class="text-slate-900 dark:text-white font-semibold">124 candidates</span>
+                                        <span class="text-slate-600 dark:text-slate-400 font-medium group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Hired</span>
+                                        <span class="text-slate-900 dark:text-white font-semibold">124</span>
                                     </div>
                                     <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                        <div class="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full pipeline-bar" style="width: 15%"></div>
+                                        <div class="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full pipeline-bar group-hover:brightness-110 transition-all" style="width: 15%"></div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="mt-6 grid grid-cols-4 gap-3 text-center">
-                                <div class="p-3 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800">
+                            <div class="mt-4 lg:mt-6 grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3 text-center">
+                                <div class="p-3 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800 cursor-pointer hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors" onclick="showToast('Conversion Rate: 29.7% — Industry avg: 22%', 'info')">
                                     <p class="text-lg font-bold text-teal-700 dark:text-teal-400">29.7%</p>
                                     <p class="text-[10px] text-slate-500 uppercase mt-1">Conversion</p>
                                 </div>
-                                <div class="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800">
+                                <div class="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors" onclick="showToast('Interview to Offer: 14.6% — Needs improvement', 'warning')">
                                     <p class="text-lg font-bold text-amber-700 dark:text-amber-400">14.6%</p>
                                     <p class="text-[10px] text-slate-500 uppercase mt-1">Interview→Offer</p>
                                 </div>
-                                <div class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800">
+                                <div class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors" onclick="showToast('Drop-off Rate: 8.2% — Below threshold', 'success')">
                                     <p class="text-lg font-bold text-red-700 dark:text-red-400">8.2%</p>
                                     <p class="text-[10px] text-slate-500 uppercase mt-1">Drop-off</p>
                                 </div>
-                                <div class="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800">
+                                <div class="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors" onclick="showToast('Acceptance Rate: 87% — Strong performance', 'success')">
                                     <p class="text-lg font-bold text-emerald-700 dark:text-emerald-400">87%</p>
                                     <p class="text-[10px] text-slate-500 uppercase mt-1">Acceptance</p>
                                 </div>
@@ -448,65 +492,68 @@
                         </div>
 
                         <!-- AI Insights Panel -->
-                        <div class="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div class="bg-white dark:bg-slate-900 rounded-xl p-5 lg:p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                                <h3 class="font-semibold text-slate-900 dark:text-white text-sm lg:text-base flex items-center gap-2">
                                     <i data-lucide="sparkles" class="w-5 h-5 text-teal-500"></i>
                                     Recent AI Insights
                                 </h3>
                                 <span class="text-xs text-slate-400 flex items-center gap-1">
                                     <span class="w-2 h-2 bg-teal-500 rounded-full ai-pulse"></span>
-                                    Live Analysis
+                                    Live
                                 </span>
                             </div>
                             <div class="space-y-3">
-                                <div class="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 flex gap-3">
-                                    <div class="mt-0.5">
+                                <div class="p-3 lg:p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 flex gap-3 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors" onclick="navigate('candidates'); setRiskFilter('high')">
+                                    <div class="mt-0.5 shrink-0">
                                         <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i>
                                     </div>
-                                    <div>
+                                    <div class="min-w-0">
                                         <p class="text-sm font-medium text-slate-900 dark:text-white">12 candidates show elevated drop-off risk</p>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Sales and Engineering pipelines require immediate attention. Average response time exceeded 5 days.</p>
-                                        <div class="flex gap-2 mt-2">
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Sales and Engineering pipelines require immediate attention.</p>
+                                        <div class="flex gap-2 mt-2 flex-wrap">
                                             <span class="px-2 py-0.5 bg-red-100 dark:bg-red-800/50 text-red-700 dark:text-red-300 text-[10px] font-semibold rounded">High Priority</span>
                                             <span class="text-[10px] text-slate-400">2 hours ago</span>
                                         </div>
                                     </div>
+                                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 shrink-0 self-center hidden sm:block"></i>
                                 </div>
-                                <div class="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50 flex gap-3">
-                                    <div class="mt-0.5">
+                                <div class="p-3 lg:p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50 flex gap-3 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors" onclick="navigate('bottlenecks')">
+                                    <div class="mt-0.5 shrink-0">
                                         <i data-lucide="trending-down" class="w-5 h-5 text-amber-500"></i>
                                     </div>
-                                    <div>
+                                    <div class="min-w-0">
                                         <p class="text-sm font-medium text-slate-900 dark:text-white">Sales hiring pipeline requires intervention</p>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Open for 45 days. Feedback cycle averaging 6.4 days. Recommend escalation to hiring manager.</p>
-                                        <div class="flex gap-2 mt-2">
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Open for 45 days. Feedback cycle averaging 6.4 days.</p>
+                                        <div class="flex gap-2 mt-2 flex-wrap">
                                             <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-800/50 text-amber-700 dark:text-amber-300 text-[10px] font-semibold rounded">Medium Priority</span>
                                             <span class="text-[10px] text-slate-400">5 hours ago</span>
                                         </div>
                                     </div>
+                                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 shrink-0 self-center hidden sm:block"></i>
                                 </div>
-                                <div class="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 flex gap-3">
-                                    <div class="mt-0.5">
+                                <div class="p-3 lg:p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 flex gap-3 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors" onclick="navigate('actions')">
+                                    <div class="mt-0.5 shrink-0">
                                         <i data-lucide="bar-chart-2" class="w-5 h-5 text-blue-500"></i>
                                     </div>
-                                    <div>
+                                    <div class="min-w-0">
                                         <p class="text-sm font-medium text-slate-900 dark:text-white">Offer acceptance rates decreased by 5%</p>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Week-over-week decline detected. Competitor activity likely. Recommend compensation review.</p>
-                                        <div class="flex gap-2 mt-2">
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Week-over-week decline detected. Recommend compensation review.</p>
+                                        <div class="flex gap-2 mt-2 flex-wrap">
                                             <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-800/50 text-blue-700 dark:text-blue-300 text-[10px] font-semibold rounded">Trend Alert</span>
                                             <span class="text-[10px] text-slate-400">1 day ago</span>
                                         </div>
                                     </div>
+                                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 shrink-0 self-center hidden sm:block"></i>
                                 </div>
-                                <div class="p-4 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800/50 flex gap-3">
-                                    <div class="mt-0.5">
+                                <div class="p-3 lg:p-4 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800/50 flex gap-3 cursor-pointer hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors" onclick="showToast('Operations team performance trending positive', 'success')">
+                                    <div class="mt-0.5 shrink-0">
                                         <i data-lucide="check-circle" class="w-5 h-5 text-teal-500"></i>
                                     </div>
-                                    <div>
+                                    <div class="min-w-0">
                                         <p class="text-sm font-medium text-slate-900 dark:text-white">Operations team feedback cycle improved</p>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Average feedback time reduced to 2.1 days. Positive trend in hiring manager engagement.</p>
-                                        <div class="flex gap-2 mt-2">
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Average feedback time reduced to 2.1 days.</p>
+                                        <div class="flex gap-2 mt-2 flex-wrap">
                                             <span class="px-2 py-0.5 bg-teal-100 dark:bg-teal-800/50 text-teal-700 dark:text-teal-300 text-[10px] font-semibold rounded">Positive</span>
                                             <span class="text-[10px] text-slate-400">2 days ago</span>
                                         </div>
@@ -518,45 +565,45 @@
                 </div>
 
                 <!-- PAGE 2: CANDIDATE PULSE CENTER -->
-                <div id="page-candidates" class="page-content hidden animate-fade-in space-y-6">
+                <div id="page-candidates" class="page-content hidden animate-fade-in space-y-4 lg:space-y-6">
                     <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                        <div class="p-6 border-b border-slate-200 dark:border-slate-800">
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <div>
-                                    <h3 class="font-semibold text-slate-900 dark:text-white">Candidate Pulse Monitor</h3>
-                                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Real-time candidate risk assessment and engagement tracking</p>
+                        <div class="p-4 lg:p-6 border-b border-slate-200 dark:border-slate-800">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 lg:gap-4">
+                                <div class="min-w-0">
+                                    <h3 class="font-semibold text-slate-900 dark:text-white text-sm lg:text-base">Candidate Pulse Monitor</h3>
+                                    <p class="text-xs lg:text-sm text-slate-500 dark:text-slate-400 mt-1">Real-time candidate risk assessment</p>
                                 </div>
-                                <div class="flex items-center gap-3">
-                                    <div class="relative">
+                                <div class="flex items-center gap-2 lg:gap-3">
+                                    <div class="relative flex-1 sm:flex-none">
                                         <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                                        <input type="text" id="candidateSearch" oninput="filterCandidates()" placeholder="Search candidates..." class="pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 w-64 dark:text-white">
+                                        <input type="text" id="candidateSearch" oninput="filterCandidates()" placeholder="Search..." class="pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 w-full sm:w-48 dark:text-white touch-target">
                                     </div>
-                                    <button onclick="refreshCandidates()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                    <button onclick="refreshCandidates()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors touch-target flex items-center justify-center shrink-0">
                                         <i data-lucide="refresh-cw" class="w-4 h-4 text-slate-600 dark:text-slate-400"></i>
                                     </button>
                                 </div>
                             </div>
                             
                             <!-- Filters -->
-                            <div class="flex gap-2 mt-4">
-                                <button onclick="setRiskFilter('all')" id="filter-all" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 transition-colors">All</button>
-                                <button onclick="setRiskFilter('high')" id="filter-high" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">High Risk</button>
-                                <button onclick="setRiskFilter('medium')" id="filter-medium" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">Medium Risk</button>
-                                <button onclick="setRiskFilter('low')" id="filter-low" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">Low Risk</button>
+                            <div class="flex gap-2 mt-3 lg:mt-4 overflow-x-auto pb-1 scrollbar-hide">
+                                <button onclick="setRiskFilter('all')" id="filter-all" class="px-3 py-2 rounded-lg text-xs font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 transition-colors touch-target whitespace-nowrap">All</button>
+                                <button onclick="setRiskFilter('high')" id="filter-high" class="px-3 py-2 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors touch-target whitespace-nowrap">High Risk</button>
+                                <button onclick="setRiskFilter('medium')" id="filter-medium" class="px-3 py-2 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors touch-target whitespace-nowrap">Medium Risk</button>
+                                <button onclick="setRiskFilter('low')" id="filter-low" class="px-3 py-2 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors touch-target whitespace-nowrap">Low Risk</button>
                             </div>
                         </div>
 
                         <div class="overflow-x-auto">
-                            <table class="w-full">
+                            <table class="w-full min-w-[640px]">
                                 <thead>
                                     <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Candidate</th>
-                                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Position</th>
-                                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Stage</th>
-                                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Last Activity</th>
-                                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Risk Score</th>
-                                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                                        <th class="px-6 py-3"></th>
+                                        <th class="text-left px-4 lg:px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Candidate</th>
+                                        <th class="text-left px-4 lg:px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Position</th>
+                                        <th class="text-left px-4 lg:px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Stage</th>
+                                        <th class="text-left px-4 lg:px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden sm:table-cell">Last Activity</th>
+                                        <th class="text-left px-4 lg:px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Risk</th>
+                                        <th class="text-left px-4 lg:px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                                        <th class="px-4 lg:px-6 py-3"></th>
                                     </tr>
                                 </thead>
                                 <tbody id="candidateTableBody" class="divide-y divide-slate-200 dark:divide-slate-800">
@@ -564,35 +611,35 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div class="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <div class="p-3 lg:p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
                             <p class="text-xs text-slate-500 dark:text-slate-400">Showing <span id="showingCount">12</span> of 2,847 candidates</p>
                             <div class="flex gap-2">
-                                <button class="px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">Previous</button>
-                                <button class="px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">Next</button>
+                                <button class="px-3 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 touch-target">Previous</button>
+                                <button class="px-3 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 touch-target">Next</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- PAGE 3: INTELLIGENCE CENTER -->
-                <div id="page-intelligence" class="page-content hidden animate-fade-in space-y-6">
-                    <div class="bg-gradient-to-r from-teal-600 to-teal-800 rounded-xl p-6 text-white shadow-lg">
+                <div id="page-intelligence" class="page-content hidden animate-fade-in space-y-4 lg:space-y-6">
+                    <div class="bg-gradient-to-r from-teal-600 to-teal-800 rounded-xl p-5 lg:p-6 text-white shadow-lg">
                         <div class="flex items-center gap-3 mb-2">
                             <i data-lucide="brain-circuit" class="w-6 h-6"></i>
-                            <h2 class="text-xl font-bold">AI Recruitment Intelligence</h2>
+                            <h2 class="text-lg lg:text-xl font-bold">AI Recruitment Intelligence</h2>
                         </div>
-                        <p class="text-teal-100 text-sm">Deep analysis of candidate behavior, engagement patterns, and predictive risk modeling</p>
+                        <p class="text-teal-100 text-xs lg:text-sm">Deep analysis of candidate behavior and predictive risk modeling</p>
                     </div>
 
-                    <div id="intelligenceContent" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div id="intelligenceContent" class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
                         <!-- Candidate Selection Prompt -->
-                        <div class="lg:col-span-3 flex flex-col items-center justify-center py-20 text-center">
+                        <div class="lg:col-span-3 flex flex-col items-center justify-center py-16 lg:py-20 text-center px-4">
                             <div class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
                                 <i data-lucide="mouse-pointer-click" class="w-8 h-8 text-slate-400"></i>
                             </div>
                             <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Select a Candidate</h3>
                             <p class="text-sm text-slate-500 dark:text-slate-400 max-w-md">Navigate to the Candidate Pulse Monitor and select any candidate to view AI-generated intelligence insights, risk factors, and recommended actions.</p>
-                            <button onclick="navigate('candidates')" class="mt-4 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors">
+                            <button onclick="navigate('candidates')" class="mt-4 px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors touch-target">
                                 Go to Candidate Pulse
                             </button>
                         </div>
@@ -600,22 +647,22 @@
                 </div>
 
                 <!-- PAGE 4: BOTTLENECK MONITOR -->
-                <div id="page-bottlenecks" class="page-content hidden animate-fade-in space-y-6">
-                    <div class="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-                        <h3 class="font-semibold text-slate-900 dark:text-white mb-6">Workflow Health Monitor</h3>
+                <div id="page-bottlenecks" class="page-content hidden animate-fade-in space-y-4 lg:space-y-6">
+                    <div class="bg-white dark:bg-slate-900 rounded-xl p-4 lg:p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h3 class="font-semibold text-slate-900 dark:text-white mb-4 lg:mb-6 text-sm lg:text-base">Workflow Health Monitor</h3>
                         
                         <!-- Section 1: Hiring Manager Feedback -->
-                        <div class="mb-8">
-                            <h4 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Delayed Hiring Manager Feedback</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div class="p-4 rounded-lg border border-red-200 dark:border-red-800/50 bg-red-50/50 dark:bg-red-900/10">
+                        <div class="mb-6 lg:mb-8">
+                            <h4 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 lg:mb-4">Delayed Hiring Manager Feedback</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+                                <div class="p-4 rounded-lg border border-red-200 dark:border-red-800/50 bg-red-50/50 dark:bg-red-900/10 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors" onclick="showBottleneckDetail('Operations')">
                                     <div class="flex items-center justify-between mb-3">
-                                        <span class="font-semibold text-slate-900 dark:text-white">Operations Team</span>
+                                        <span class="font-semibold text-slate-900 dark:text-white text-sm">Operations Team</span>
                                         <span class="px-2 py-0.5 bg-red-100 dark:bg-red-800/50 text-red-700 dark:text-red-400 text-xs font-bold rounded">HIGH</span>
                                     </div>
                                     <div class="flex items-end gap-2 mb-2">
-                                        <span class="text-3xl font-bold text-red-600 dark:text-red-400">6.4</span>
-                                        <span class="text-sm text-slate-500 dark:text-slate-400 mb-1">Days Avg</span>
+                                        <span class="text-2xl lg:text-3xl font-bold text-red-600 dark:text-red-400">6.4</span>
+                                        <span class="text-xs lg:text-sm text-slate-500 dark:text-slate-400 mb-1">Days Avg</span>
                                     </div>
                                     <div class="w-full h-2 bg-red-200 dark:bg-red-800/30 rounded-full mb-3">
                                         <div class="h-full bg-red-500 rounded-full" style="width: 85%"></div>
@@ -623,14 +670,14 @@
                                     <p class="text-xs text-slate-500 dark:text-slate-400">12 pending feedback requests</p>
                                 </div>
 
-                                <div class="p-4 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-900/10">
+                                <div class="p-4 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-900/10 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition-colors" onclick="showBottleneckDetail('Sales')">
                                     <div class="flex items-center justify-between mb-3">
-                                        <span class="font-semibold text-slate-900 dark:text-white">Sales Team</span>
+                                        <span class="font-semibold text-slate-900 dark:text-white text-sm">Sales Team</span>
                                         <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-800/50 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded">LOW</span>
                                     </div>
                                     <div class="flex items-end gap-2 mb-2">
-                                        <span class="text-3xl font-bold text-emerald-600 dark:text-emerald-400">2.1</span>
-                                        <span class="text-sm text-slate-500 dark:text-slate-400 mb-1">Days Avg</span>
+                                        <span class="text-2xl lg:text-3xl font-bold text-emerald-600 dark:text-emerald-400">2.1</span>
+                                        <span class="text-xs lg:text-sm text-slate-500 dark:text-slate-400 mb-1">Days Avg</span>
                                     </div>
                                     <div class="w-full h-2 bg-emerald-200 dark:bg-emerald-800/30 rounded-full mb-3">
                                         <div class="h-full bg-emerald-500 rounded-full" style="width: 25%"></div>
@@ -638,14 +685,14 @@
                                     <p class="text-xs text-slate-500 dark:text-slate-400">3 pending feedback requests</p>
                                 </div>
 
-                                <div class="p-4 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-900/10">
+                                <div class="p-4 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-900/10 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/20 transition-colors" onclick="showBottleneckDetail('Engineering')">
                                     <div class="flex items-center justify-between mb-3">
-                                        <span class="font-semibold text-slate-900 dark:text-white">Engineering</span>
+                                        <span class="font-semibold text-slate-900 dark:text-white text-sm">Engineering</span>
                                         <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-800/50 text-amber-700 dark:text-amber-400 text-xs font-bold rounded">MEDIUM</span>
                                     </div>
                                     <div class="flex items-end gap-2 mb-2">
-                                        <span class="text-3xl font-bold text-amber-600 dark:text-amber-400">4.2</span>
-                                        <span class="text-sm text-slate-500 dark:text-slate-400 mb-1">Days Avg</span>
+                                        <span class="text-2xl lg:text-3xl font-bold text-amber-600 dark:text-amber-400">4.2</span>
+                                        <span class="text-xs lg:text-sm text-slate-500 dark:text-slate-400 mb-1">Days Avg</span>
                                     </div>
                                     <div class="w-full h-2 bg-amber-200 dark:bg-amber-800/30 rounded-full mb-3">
                                         <div class="h-full bg-amber-500 rounded-full" style="width: 55%"></div>
@@ -656,38 +703,38 @@
                         </div>
 
                         <!-- Section 2: Slow Moving Requisitions -->
-                        <div class="mb-8">
-                            <h4 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Slow Moving Requisitions</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="flex items-center gap-4 p-4 rounded-lg border border-red-200 dark:border-red-800/50 bg-red-50/30 dark:bg-red-900/5">
-                                    <div class="w-12 h-12 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                                        <i data-lucide="alert-circle" class="w-6 h-6 text-red-600 dark:text-red-400"></i>
+                        <div class="mb-6 lg:mb-8">
+                            <h4 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 lg:mb-4">Slow Moving Requisitions</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 lg:gap-4">
+                                <div class="flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-lg border border-red-200 dark:border-red-800/50 bg-red-50/30 dark:bg-red-900/5 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors" onclick="showRequisitionDetail('Sales Executive')">
+                                    <div class="w-10 h-10 lg:w-12 lg:h-12 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+                                        <i data-lucide="alert-circle" class="w-5 h-5 lg:w-6 lg:h-6 text-red-600 dark:text-red-400"></i>
                                     </div>
-                                    <div class="flex-1">
-                                        <h5 class="font-semibold text-slate-900 dark:text-white">Sales Executive</h5>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400">Open for 45 days • 3 candidates in pipeline</p>
+                                    <div class="flex-1 min-w-0">
+                                        <h5 class="font-semibold text-slate-900 dark:text-white text-sm">Sales Executive</h5>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">Open for 45 days • 3 candidates</p>
                                     </div>
-                                    <span class="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold rounded-full">Requires Intervention</span>
+                                    <span class="px-2 lg:px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] lg:text-xs font-bold rounded-full whitespace-nowrap">Requires Intervention</span>
                                 </div>
 
-                                <div class="flex items-center gap-4 p-4 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50/30 dark:bg-amber-900/5">
-                                    <div class="w-12 h-12 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                                        <i data-lucide="clock" class="w-6 h-6 text-amber-600 dark:text-amber-400"></i>
+                                <div class="flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50/30 dark:bg-amber-900/5 cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors" onclick="showRequisitionDetail('Supply Chain Analyst')">
+                                    <div class="w-10 h-10 lg:w-12 lg:h-12 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+                                        <i data-lucide="clock" class="w-5 h-5 lg:w-6 lg:h-6 text-amber-600 dark:text-amber-400"></i>
                                     </div>
-                                    <div class="flex-1">
-                                        <h5 class="font-semibold text-slate-900 dark:text-white">Supply Chain Analyst</h5>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400">Open for 39 days • 5 candidates in pipeline</p>
+                                    <div class="flex-1 min-w-0">
+                                        <h5 class="font-semibold text-slate-900 dark:text-white text-sm">Supply Chain Analyst</h5>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">Open for 39 days • 5 candidates</p>
                                     </div>
-                                    <span class="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-bold rounded-full">At Risk</span>
+                                    <span class="px-2 lg:px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] lg:text-xs font-bold rounded-full whitespace-nowrap">At Risk</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Process Heatmap -->
                         <div>
-                            <h4 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Recruitment Process Heatmap</h4>
-                            <div class="overflow-x-auto">
-                                <div class="min-w-[600px]">
+                            <h4 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 lg:mb-4">Recruitment Process Heatmap</h4>
+                            <div class="overflow-x-auto -mx-4 lg:mx-0 px-4 lg:px-0">
+                                <div class="min-w-[600px] lg:min-w-0">
                                     <div class="grid grid-cols-6 gap-1 mb-2">
                                         <div class="text-xs font-medium text-slate-500 dark:text-slate-400 p-2"></div>
                                         <div class="text-xs font-medium text-slate-500 dark:text-slate-400 p-2 text-center">Application</div>
@@ -720,20 +767,20 @@
                 </div>
 
                 <!-- PAGE 5: ACTION CENTER -->
-                <div id="page-actions" class="page-content hidden animate-fade-in space-y-6">
-                    <div class="flex items-center justify-between">
+                <div id="page-actions" class="page-content hidden animate-fade-in space-y-4 lg:space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
-                            <h3 class="font-semibold text-slate-900 dark:text-white">Predictive Action Hub</h3>
-                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">AI-generated recommendations prioritized by impact and urgency</p>
+                            <h3 class="font-semibold text-slate-900 dark:text-white text-sm lg:text-base">Predictive Action Hub</h3>
+                            <p class="text-xs lg:text-sm text-slate-500 dark:text-slate-400 mt-1">AI-generated recommendations prioritized by impact</p>
                         </div>
-                        <div class="flex gap-2">
-                            <button onclick="filterActions('all')" id="action-filter-all" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900">All</button>
-                            <button onclick="filterActions('high')" id="action-filter-high" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">High Priority</button>
-                            <button onclick="filterActions('medium')" id="action-filter-medium" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">Medium</button>
+                        <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                            <button onclick="filterActions('all')" id="action-filter-all" class="px-3 py-2 rounded-lg text-xs font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 touch-target whitespace-nowrap">All</button>
+                            <button onclick="filterActions('high')" id="action-filter-high" class="px-3 py-2 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 touch-target whitespace-nowrap">High Priority</button>
+                            <button onclick="filterActions('medium')" id="action-filter-medium" class="px-3 py-2 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 touch-target whitespace-nowrap">Medium</button>
                         </div>
                     </div>
 
-                    <div id="actionsContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div id="actionsContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                         <!-- Action Cards populated by JS -->
                     </div>
                 </div>
@@ -742,15 +789,15 @@
         </main>
 
         <!-- Notifications Panel -->
-        <div id="notificationsPanel" class="fixed right-0 top-16 w-80 h-[calc(100vh-4rem)] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto">
+        <div id="notificationsPanel" class="fixed right-0 top-0 h-full w-full max-w-sm bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto">
             <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                 <h3 class="font-semibold text-slate-900 dark:text-white">Notifications</h3>
-                <button onclick="toggleNotifications()" class="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800">
-                    <i data-lucide="x" class="w-4 h-4"></i>
+                <button onclick="toggleNotifications()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 touch-target flex items-center justify-center">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
             <div class="p-4 space-y-3">
-                <div class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50">
+                <div class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors" onclick="navigate('candidates'); toggleNotifications(); setRiskFilter('high')">
                     <div class="flex items-start gap-2">
                         <span class="w-2 h-2 bg-red-500 rounded-full mt-1.5 shrink-0"></span>
                         <div>
@@ -760,7 +807,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50">
+                <div class="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors" onclick="navigate('bottlenecks'); toggleNotifications()">
                     <div class="flex items-start gap-2">
                         <span class="w-2 h-2 bg-amber-500 rounded-full mt-1.5 shrink-0"></span>
                         <div>
@@ -770,7 +817,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50">
+                <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors" onclick="showToast('Report already downloaded', 'info'); toggleNotifications()">
                     <div class="flex items-start gap-2">
                         <span class="w-2 h-2 bg-blue-500 rounded-full mt-1.5 shrink-0"></span>
                         <div>
@@ -780,7 +827,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="p-3 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800/50">
+                <div class="p-3 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800/50 cursor-pointer hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors" onclick="showToast('Candidate David Chen onboarded successfully', 'success'); toggleNotifications()">
                     <div class="flex items-start gap-2">
                         <span class="w-2 h-2 bg-teal-500 rounded-full mt-1.5 shrink-0"></span>
                         <div>
@@ -795,14 +842,24 @@
 
         <!-- Candidate Profile Drawer -->
         <div id="drawerOverlay" onclick="closeDrawer()" class="fixed inset-0 drawer-overlay z-50 hidden opacity-0 transition-opacity duration-300"></div>
-        <div id="candidateDrawer" class="fixed right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-slate-900 shadow-2xl transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto border-l border-slate-200 dark:border-slate-800">
-            <div id="drawerContent" class="p-6">
+        <div id="candidateDrawer" class="fixed right-0 top-0 h-full w-full sm:max-w-lg bg-white dark:bg-slate-900 shadow-2xl transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto border-l border-slate-200 dark:border-slate-800">
+            <div id="drawerContent" class="p-4 lg:p-6">
                 <!-- Populated by JS -->
             </div>
         </div>
 
+        <!-- Chart Detail Modal -->
+        <div id="chartModalOverlay" onclick="closeChartModal()" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300"></div>
+        <div id="chartModal" class="fixed inset-x-0 bottom-0 sm:inset-0 sm:flex sm:items-center sm:justify-center z-50 pointer-events-none">
+            <div class="bg-white dark:bg-slate-900 w-full sm:w-[500px] sm:rounded-xl rounded-t-xl shadow-2xl border border-slate-200 dark:border-slate-800 transform translate-y-full sm:translate-y-0 sm:scale-95 opacity-0 transition-all duration-300 pointer-events-auto max-h-[85vh] overflow-y-auto">
+                <div id="chartModalContent" class="p-5 lg:p-6">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
         <!-- Toast Container -->
-        <div id="toastContainer" class="fixed bottom-6 right-6 z-50 space-y-2"></div>
+        <div id="toastContainer" class="fixed bottom-4 right-4 lg:bottom-6 lg:right-6 z-50 space-y-2 max-w-[90vw] sm:max-w-sm"></div>
     </div>
 
     <script>
@@ -840,6 +897,15 @@
             { dept: "Finance", values: [2, 3, 3, 4, 2] }
         ];
 
+        const velocityData = [
+            { month: 'Jan', hires: 42, target: 40, avgDays: 35, sources: { referral: 18, direct: 14, agency: 10 } },
+            { month: 'Feb', hires: 38, target: 42, avgDays: 34, sources: { referral: 16, direct: 12, agency: 10 } },
+            { month: 'Mar', hires: 45, target: 44, avgDays: 33, sources: { referral: 20, direct: 15, agency: 10 } },
+            { month: 'Apr', hires: 51, target: 46, avgDays: 32, sources: { referral: 22, direct: 19, agency: 10 } },
+            { month: 'May', hires: 48, target: 48, avgDays: 31, sources: { referral: 21, direct: 17, agency: 10 } },
+            { month: 'Jun', hires: 55, target: 50, avgDays: 29, sources: { referral: 25, direct: 20, agency: 10 } }
+        ];
+
         // ==================== STATE ====================
         let currentPage = 'dashboard';
         let currentRole = 'manager';
@@ -847,6 +913,7 @@
         let actionFilter = 'all';
         let selectedCandidate = null;
         let charts = {};
+        let sidebarOpen = false;
 
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
@@ -856,20 +923,39 @@
             renderHeatmap();
             renderActions();
             checkTheme();
+            window.addEventListener('resize', handleResize);
+            handleResize();
         });
+
+        function handleResize() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (window.innerWidth >= 1024) {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('lg:translate-x-0');
+                overlay.classList.add('hidden');
+                overlay.classList.remove('opacity-100');
+                sidebarOpen = false;
+            } else {
+                if (!sidebarOpen) {
+                    sidebar.classList.add('-translate-x-full');
+                    sidebar.classList.remove('lg:translate-x-0');
+                }
+            }
+            
+            if (charts.risk) charts.risk.resize();
+            if (charts.velocity) charts.velocity.resize();
+        }
 
         // ==================== NAVIGATION ====================
         function navigate(page) {
-            // Hide all pages
             document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
-            // Show target page
             document.getElementById(`page-${page}`).classList.remove('hidden');
             
-            // Update nav active state
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             document.getElementById(`nav-${page}`)?.classList.add('active');
             
-            // Update header
             const titles = {
                 dashboard: ['Executive Dashboard', 'Real-time recruitment intelligence overview'],
                 candidates: ['Candidate Pulse Center', 'Monitor candidate engagement and risk indicators'],
@@ -882,13 +968,10 @@
             
             currentPage = page;
             
-            // Close sidebar on mobile
             if (window.innerWidth < 1024) {
-                document.getElementById('sidebar').classList.add('-translate-x-full');
-                document.getElementById('sidebarOverlay').classList.add('hidden');
+                closeSidebar();
             }
 
-            // Refresh charts if dashboard
             if (page === 'dashboard') {
                 setTimeout(() => {
                     if (charts.risk) charts.risk.destroy();
@@ -897,10 +980,11 @@
                 }, 100);
             }
 
-            // If navigating to intelligence with selected candidate, show it
             if (page === 'intelligence' && selectedCandidate) {
                 renderIntelligence(selectedCandidate);
             }
+            
+            document.getElementById('contentArea').scrollTop = 0;
         }
 
         // ==================== THEME ====================
@@ -913,7 +997,6 @@
         function toggleTheme() {
             document.documentElement.classList.toggle('dark');
             localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-            // Refresh charts for new colors
             setTimeout(() => {
                 if (charts.risk) charts.risk.destroy();
                 if (charts.velocity) charts.velocity.destroy();
@@ -923,39 +1006,51 @@
 
         // ==================== SIDEBAR ====================
         function toggleSidebar() {
+            if (sidebarOpen) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        }
+
+        function openSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
-            if (sidebar.classList.contains('-translate-x-full')) {
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.remove('hidden');
-            } else {
-                sidebar.classList.add('-translate-x-full');
+            sidebar.classList.remove('-translate-x-full');
+            overlay.classList.remove('hidden');
+            void overlay.offsetWidth;
+            overlay.classList.remove('opacity-0');
+            overlay.classList.add('opacity-100');
+            sidebarOpen = true;
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.remove('opacity-100');
+            overlay.classList.add('opacity-0');
+            setTimeout(() => {
                 overlay.classList.add('hidden');
-            }
+                document.body.style.overflow = '';
+            }, 300);
+            sidebarOpen = false;
         }
 
         // ==================== ROLE SWITCHING ====================
         function switchRole(role) {
             currentRole = role;
             showToast(`Switched to ${role.charAt(0).toUpperCase() + role.slice(1)} View`, 'info');
-            
-            // Role-based visibility
-            const recruiterOnly = document.querySelectorAll('.recruiter-only');
-            const managerOnly = document.querySelectorAll('.manager-only');
-            const executiveOnly = document.querySelectorAll('.executive-only');
-            
-            recruiterOnly.forEach(el => el.style.display = role === 'recruiter' ? '' : 'none');
-            managerOnly.forEach(el => el.style.display = role === 'manager' ? '' : 'none');
-            executiveOnly.forEach(el => el.style.display = role === 'executive' ? '' : 'none');
         }
 
-        // ==================== CHARTS ====================
+        // ==================== INTERACTIVE CHARTS ====================
         function initCharts() {
             const isDark = document.documentElement.classList.contains('dark');
             const textColor = isDark ? '#94a3b8' : '#64748b';
             const gridColor = isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(148, 163, 184, 0.1)';
 
-            // Risk Distribution Chart
+            // Risk Distribution Chart - Interactive
             const riskCtx = document.getElementById('riskChart');
             if (riskCtx) {
                 charts.risk = new Chart(riskCtx, {
@@ -966,13 +1061,35 @@
                             data: [186, 423, 2238],
                             backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
                             borderWidth: 0,
-                            hoverOffset: 4
+                            hoverOffset: 8,
+                            hoverBorderWidth: 0
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        cutout: '70%',
+                        cutout: '68%',
+                        onClick: (e, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const filters = ['high', 'medium', 'low'];
+                                const labels = ['High Risk', 'Medium Risk', 'Low Risk'];
+                                const counts = [186, 423, 2238];
+                                
+                                // Visual feedback
+                                showToast(`Filtering ${labels[index]}: ${counts[index]} candidates`, 'info');
+                                document.getElementById('chartFilterReset').classList.remove('hidden');
+                                
+                                // Navigate and filter
+                                setTimeout(() => {
+                                    navigate('candidates');
+                                    setRiskFilter(filters[index]);
+                                }, 400);
+                            }
+                        },
+                        onHover: (e, elements) => {
+                            e.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+                        },
                         plugins: {
                             legend: { display: false },
                             tooltip: {
@@ -982,14 +1099,27 @@
                                 borderColor: isDark ? '#334155' : '#e2e8f0',
                                 borderWidth: 1,
                                 padding: 12,
-                                displayColors: true
+                                displayColors: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return `${label}: ${value} (${percentage}%) — Tap to filter`;
+                                    }
+                                }
                             }
+                        },
+                        animation: {
+                            animateScale: true,
+                            animateRotate: true
                         }
                     }
                 });
             }
 
-            // Velocity Chart
+            // Velocity Chart - Interactive
             const velocityCtx = document.getElementById('velocityChart');
             if (velocityCtx) {
                 charts.velocity = new Chart(velocityCtx, {
@@ -1003,32 +1133,71 @@
                             backgroundColor: 'rgba(20, 184, 166, 0.1)',
                             fill: true,
                             tension: 0.4,
-                            pointRadius: 4,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
                             pointBackgroundColor: '#14b8a6',
                             pointBorderColor: isDark ? '#1e293b' : '#ffffff',
-                            pointBorderWidth: 2
+                            pointBorderWidth: 2,
+                            pointHoverBorderWidth: 3
                         }, {
                             label: 'Target',
                             data: [40, 42, 44, 46, 48, 50],
                             borderColor: '#94a3b8',
                             borderDash: [5, 5],
                             tension: 0.4,
-                            pointRadius: 0,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
                             fill: false
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        onClick: (e, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const data = velocityData[index];
+                                showVelocityDetail(data);
+                            }
+                        },
+                        onHover: (e, elements) => {
+                            e.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+                        },
                         plugins: {
-                            legend: { display: false },
+                            legend: { 
+                                display: true,
+                                position: 'top',
+                                align: 'end',
+                                labels: {
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    padding: 15,
+                                    font: { size: 11 }
+                                },
+                                onClick: (e, legendItem, legend) => {
+                                    const index = legendItem.datasetIndex;
+                                    const ci = legend.chart;
+                                    if (ci.isDatasetVisible(index)) {
+                                        ci.hide(index);
+                                        legendItem.hidden = true;
+                                    } else {
+                                        ci.show(index);
+                                        legendItem.hidden = false;
+                                    }
+                                }
+                            },
                             tooltip: {
                                 backgroundColor: isDark ? '#1e293b' : '#ffffff',
                                 titleColor: isDark ? '#f8fafc' : '#0f172a',
                                 bodyColor: isDark ? '#cbd5e1' : '#475569',
                                 borderColor: isDark ? '#334155' : '#e2e8f0',
                                 borderWidth: 1,
-                                padding: 12
+                                padding: 12,
+                                callbacks: {
+                                    afterLabel: function() {
+                                        return 'Tap for detailed breakdown';
+                                    }
+                                }
                             }
                         },
                         scales: {
@@ -1041,61 +1210,276 @@
                                 ticks: { color: textColor, font: { size: 11 } },
                                 beginAtZero: true
                             }
+                        },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
                         }
                     }
                 });
             }
         }
 
+        function resetChartFilter() {
+            document.getElementById('chartFilterReset').classList.add('hidden');
+            showToast('Chart filter reset', 'info');
+        }
+
+        // ==================== CHART MODAL ====================
+        function showVelocityDetail(data) {
+            const overlay = document.getElementById('chartModalOverlay');
+            const modal = document.getElementById('chartModal');
+            const content = document.getElementById('chartModalContent');
+            
+            const performance = data.hires >= data.target ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400';
+            const diff = data.hires - data.target;
+            const diffText = diff >= 0 ? `+${diff} above target` : `${diff} below target`;
+            
+            content.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">${data.month} 2024 Performance</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Hiring velocity breakdown</p>
+                    </div>
+                    <button onclick="closeChartModal()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 touch-target">
+                        <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-center">
+                        <p class="text-2xl font-bold ${performance}">${data.hires}</p>
+                        <p class="text-xs text-slate-500 uppercase mt-1">Actual Hires</p>
+                    </div>
+                    <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-center">
+                        <p class="text-2xl font-bold text-slate-700 dark:text-slate-300">${data.target}</p>
+                        <p class="text-xs text-slate-500 uppercase mt-1">Target</p>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-slate-600 dark:text-slate-400">Performance</span>
+                        <span class="text-sm font-bold ${performance}">${diffText}</span>
+                    </div>
+                    <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full ${data.hires >= data.target ? 'bg-emerald-500' : 'bg-amber-500'}" style="width: ${Math.min((data.hires / data.target) * 100, 100)}%"></div>
+                    </div>
+                </div>
+                
+                <div class="space-y-3 mb-4">
+                    <h4 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Hire Sources</h4>
+                    <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-teal-500"></span>
+                            <span class="text-sm text-slate-700 dark:text-slate-300">Referrals</span>
+                        </div>
+                        <span class="text-sm font-semibold text-slate-900 dark:text-white">${data.sources.referral}</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                            <span class="text-sm text-slate-700 dark:text-slate-300">Direct Applications</span>
+                        </div>
+                        <span class="text-sm font-semibold text-slate-900 dark:text-white">${data.sources.direct}</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-purple-500"></span>
+                            <span class="text-sm text-slate-700 dark:text-slate-300">Agency</span>
+                        </div>
+                        <span class="text-sm font-semibold text-slate-900 dark:text-white">${data.sources.agency}</span>
+                    </div>
+                </div>
+                
+                <div class="p-3 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800">
+                    <div class="flex items-start gap-2">
+                        <i data-lucide="clock" class="w-4 h-4 text-teal-600 dark:text-teal-400 mt-0.5"></i>
+                        <div>
+                            <p class="text-sm font-medium text-slate-900 dark:text-white">Average Time to Fill</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">${data.avgDays} days — ${data.avgDays <= 30 ? 'Optimal' : 'Above target'}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            overlay.classList.remove('hidden');
+            void overlay.offsetWidth;
+            overlay.classList.remove('opacity-0');
+            
+            const modalInner = modal.querySelector('div');
+            modalInner.classList.remove('translate-y-full', 'sm:scale-95', 'opacity-0');
+            modalInner.classList.add('sm:scale-100', 'translate-y-0', 'opacity-100');
+            
+            lucide.createIcons();
+        }
+
+        function closeChartModal() {
+            const overlay = document.getElementById('chartModalOverlay');
+            const modal = document.getElementById('chartModal');
+            const modalInner = modal.querySelector('div');
+            
+            overlay.classList.add('opacity-0');
+            modalInner.classList.add('translate-y-full', 'sm:scale-95', 'opacity-0');
+            modalInner.classList.remove('sm:scale-100', 'translate-y-0', 'opacity-100');
+            
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        function showHealthDetail() {
+            const overlay = document.getElementById('chartModalOverlay');
+            const modal = document.getElementById('chartModal');
+            const content = document.getElementById('chartModalContent');
+            
+            content.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Health Score Breakdown</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Overall: 82/100</p>
+                    </div>
+                    <button onclick="closeChartModal()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 touch-target">
+                        <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-semibold text-slate-900 dark:text-white">Quality Score</span>
+                            <span class="text-xl font-bold text-emerald-600 dark:text-emerald-400">74</span>
+                        </div>
+                        <div class="w-full h-2 bg-emerald-200 dark:bg-emerald-800/30 rounded-full mb-2">
+                            <div class="h-full bg-emerald-500 rounded-full" style="width: 74%"></div>
+                        </div>
+                        <p class="text-xs text-slate-500">Hire quality, retention prediction, manager satisfaction</p>
+                    </div>
+                    
+                    <div class="p-4 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-semibold text-slate-900 dark:text-white">Speed Score</span>
+                            <span class="text-xl font-bold text-teal-600 dark:text-teal-400">88</span>
+                        </div>
+                        <div class="w-full h-2 bg-teal-200 dark:bg-teal-800/30 rounded-full mb-2">
+                            <div class="h-full bg-teal-500 rounded-full" style="width: 88%"></div>
+                        </div>
+                        <p class="text-xs text-slate-500">Time to fill, process velocity, response times</p>
+                    </div>
+                    
+                    <div class="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-semibold text-slate-900 dark:text-white">Cost Score</span>
+                            <span class="text-xl font-bold text-amber-600 dark:text-amber-400">84</span>
+                        </div>
+                        <div class="w-full h-2 bg-amber-200 dark:bg-amber-800/30 rounded-full mb-2">
+                            <div class="h-full bg-amber-500 rounded-full" style="width: 84%"></div>
+                        </div>
+                        <p class="text-xs text-slate-500">Cost per hire, agency spend, resource efficiency</p>
+                    </div>
+                </div>
+            `;
+            
+            overlay.classList.remove('hidden');
+            void overlay.offsetWidth;
+            overlay.classList.remove('opacity-0');
+            
+            const modalInner = modal.querySelector('div');
+            modalInner.classList.remove('translate-y-full', 'sm:scale-95', 'opacity-0');
+            modalInner.classList.add('sm:scale-100', 'translate-y-0', 'opacity-100');
+            
+            lucide.createIcons();
+        }
+
+        function showPipelineDetail(stage) {
+            const details = {
+                'Screening': { count: 847, conversion: '51%', avgTime: '3.2 days', risk: 'Low' },
+                'Interview': { count: 432, conversion: '43%', avgTime: '8.5 days', risk: 'Medium' },
+                'Offer': { count: 186, conversion: '67%', avgTime: '4.1 days', risk: 'High' },
+                'Hired': { count: 124, conversion: '100%', avgTime: '12.3 days', risk: 'Low' }
+            };
+            const d = details[stage];
+            showToast(`${stage}: ${d.count} candidates • ${d.conversion} conversion • ${d.avgTime} avg`, 'info');
+        }
+
+        function kpiClick(type) {
+            const messages = {
+                requisitions: '124 Active Requisitions across 8 departments',
+                candidates: '2,847 Total Candidates in active pipeline',
+                highrisk: '186 High Risk candidates need immediate attention',
+                offer: '87% Offer Acceptance Rate — 2% decrease from last month',
+                timefill: '31 Days Average Time to Fill — improved by 3 days'
+            };
+            showToast(messages[type], 'info');
+        }
+
+        function showBottleneckDetail(team) {
+            const details = {
+                'Operations': 'Operations Team: 12 pending feedback requests. Average 6.4 days. Recommend SLA enforcement.',
+                'Sales': 'Sales Team: 3 pending feedback requests. Average 2.1 days. Best performing team.',
+                'Engineering': 'Engineering Team: 7 pending feedback requests. Average 4.2 days. Moderate risk.'
+            };
+            showToast(details[team], 'warning');
+        }
+
+        function showRequisitionDetail(role) {
+            const details = {
+                'Sales Executive': 'Sales Executive: Open 45 days. 3 candidates. 2 high risk. Recommend escalation.',
+                'Supply Chain Analyst': 'Supply Chain Analyst: Open 39 days. 5 candidates. 1 medium risk. Monitor closely.'
+            };
+            showToast(details[role], 'warning');
+        }
+
         // ==================== CANDIDATES ====================
         function renderCandidates() {
             const tbody = document.getElementById('candidateTableBody');
+            const searchVal = document.getElementById('candidateSearch')?.value.toLowerCase() || '';
+            
             const filtered = candidates.filter(c => {
                 if (riskFilter === 'all') return true;
                 return c.status.toLowerCase().includes(riskFilter);
             }).filter(c => {
-                const search = document.getElementById('candidateSearch')?.value.toLowerCase() || '';
-                return !search || c.name.toLowerCase().includes(search) || c.position.toLowerCase().includes(search);
+                return !searchVal || c.name.toLowerCase().includes(searchVal) || c.position.toLowerCase().includes(searchVal);
             });
 
             document.getElementById('showingCount').textContent = filtered.length;
 
             tbody.innerHTML = filtered.map(c => `
                 <tr class="table-row cursor-pointer" onclick="selectCandidate(${c.id})">
-                    <td class="px-6 py-4">
+                    <td class="px-4 lg:px-6 py-3 lg:py-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-navy-600 to-navy-800 flex items-center justify-center text-white text-sm font-semibold">
+                            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-navy-600 to-navy-800 flex items-center justify-center text-white text-sm font-semibold shrink-0">
                                 ${c.name.split(' ').map(n => n[0]).join('')}
                             </div>
-                            <div>
-                                <p class="text-sm font-semibold text-slate-900 dark:text-white">${c.name}</p>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">${c.email}</p>
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">${c.name}</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 truncate">${c.email}</p>
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">${c.position}</td>
-                    <td class="px-6 py-4">
+                    <td class="px-4 lg:px-6 py-3 lg:py-4 text-sm text-slate-600 dark:text-slate-300">
+                        <span class="truncate block max-w-[120px] sm:max-w-none">${c.position}</span>
+                    </td>
+                    <td class="px-4 lg:px-6 py-3 lg:py-4">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                             ${c.stage}
                         </span>
                     </td>
-                    <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">${c.lastActivity}</td>
-                    <td class="px-6 py-4">
+                    <td class="px-4 lg:px-6 py-3 lg:py-4 text-sm text-slate-500 dark:text-slate-400 hidden sm:table-cell">${c.lastActivity}</td>
+                    <td class="px-4 lg:px-6 py-3 lg:py-4">
                         <div class="flex items-center gap-2">
-                            <div class="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div class="w-12 lg:w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden shrink-0">
                                 <div class="h-full rounded-full ${c.riskScore > 70 ? 'bg-red-500' : c.riskScore > 40 ? 'bg-amber-500' : 'bg-emerald-500'}" style="width: ${c.riskScore}%"></div>
                             </div>
                             <span class="text-sm font-semibold ${c.riskScore > 70 ? 'text-red-600 dark:text-red-400' : c.riskScore > 40 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${c.riskScore}</span>
                         </div>
                     </td>
-                    <td class="px-6 py-4">
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${c.status === 'High Risk' ? 'risk-high' : c.status === 'Medium Risk' ? 'risk-medium' : 'risk-low'}">
+                    <td class="px-4 lg:px-6 py-3 lg:py-4">
+                        <span class="inline-flex items-center gap-1.5 px-2 lg:px-2.5 py-1 rounded-lg text-xs font-semibold ${c.status === 'High Risk' ? 'risk-high' : c.status === 'Medium Risk' ? 'risk-medium' : 'risk-low'}">
                             <span class="status-dot ${c.status === 'High Risk' ? 'bg-red-500' : c.status === 'Medium Risk' ? 'bg-amber-500' : 'bg-emerald-500'}"></span>
-                            ${c.status}
+                            <span class="hidden sm:inline">${c.status}</span>
                         </span>
                     </td>
-                    <td class="px-6 py-4">
-                        <button onclick="event.stopPropagation(); selectCandidate(${c.id})" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                    <td class="px-4 lg:px-6 py-3 lg:py-4">
+                        <button onclick="event.stopPropagation(); selectCandidate(${c.id})" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors touch-target-sm flex items-center justify-center">
                             <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
                         </button>
                     </td>
@@ -1111,13 +1495,12 @@
 
         function setRiskFilter(filter) {
             riskFilter = filter;
-            // Update button styles
             ['all', 'high', 'medium', 'low'].forEach(f => {
                 const btn = document.getElementById(`filter-${f}`);
                 if (f === filter) {
-                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 transition-colors';
+                    btn.className = 'px-3 py-2 rounded-lg text-xs font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 transition-colors touch-target whitespace-nowrap';
                 } else {
-                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors';
+                    btn.className = 'px-3 py-2 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors touch-target whitespace-nowrap';
                 }
             });
             renderCandidates();
@@ -1139,21 +1522,21 @@
 
             content.innerHTML = `
                 <div class="flex items-center justify-between mb-6">
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-navy-600 to-navy-800 flex items-center justify-center text-white text-lg font-semibold">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-navy-600 to-navy-800 flex items-center justify-center text-white text-lg font-semibold shrink-0">
                             ${selectedCandidate.name.split(' ').map(n => n[0]).join('')}
                         </div>
-                        <div>
-                            <h3 class="font-bold text-lg text-slate-900 dark:text-white">${selectedCandidate.name}</h3>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">${selectedCandidate.position}</p>
+                        <div class="min-w-0">
+                            <h3 class="font-bold text-lg text-slate-900 dark:text-white truncate">${selectedCandidate.name}</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 truncate">${selectedCandidate.position}</p>
                         </div>
                     </div>
-                    <button onclick="closeDrawer()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <button onclick="closeDrawer()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors touch-target flex items-center justify-center shrink-0">
                         <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
                     </button>
                 </div>
 
-                <div class="space-y-6">
+                <div class="space-y-5 lg:space-y-6">
                     <div class="grid grid-cols-2 gap-3">
                         <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
                             <p class="text-xs text-slate-500 dark:text-slate-400 uppercase">Stage</p>
@@ -1165,7 +1548,7 @@
                         </div>
                         <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
                             <p class="text-xs text-slate-500 dark:text-slate-400 uppercase">Location</p>
-                            <p class="text-sm font-semibold text-slate-900 dark:text-white mt-1">${selectedCandidate.location}</p>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white mt-1 truncate">${selectedCandidate.location}</p>
                         </div>
                         <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
                             <p class="text-xs text-slate-500 dark:text-slate-400 uppercase">Phone</p>
@@ -1196,9 +1579,9 @@
                         <div class="space-y-2">
                             ${selectedCandidate.actions.map((a, i) => `
                                 <div class="flex items-center gap-3 p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                                    <div class="w-6 h-6 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-700 dark:text-teal-400 text-xs font-bold">${i + 1}</div>
+                                    <div class="w-6 h-6 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-700 dark:text-teal-400 text-xs font-bold shrink-0">${i + 1}</div>
                                     <p class="text-sm text-slate-700 dark:text-slate-300 flex-1">${a}</p>
-                                    <button onclick="showToast('Action marked as complete', 'success')" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors">
+                                    <button onclick="showToast('Action marked as complete', 'success')" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors touch-target-sm flex items-center justify-center">
                                         <i data-lucide="check" class="w-4 h-4 text-slate-400"></i>
                                     </button>
                                 </div>
@@ -1206,7 +1589,7 @@
                         </div>
                     </div>
 
-                    <button onclick="navigate('intelligence'); closeDrawer();" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                    <button onclick="navigate('intelligence'); closeDrawer();" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 touch-target">
                         <i data-lucide="brain-circuit" class="w-4 h-4"></i>
                         View Full AI Analysis
                     </button>
@@ -1214,7 +1597,8 @@
             `;
 
             overlay.classList.remove('hidden');
-            setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+            void overlay.offsetWidth;
+            overlay.classList.remove('opacity-0');
             drawer.classList.remove('translate-x-full');
             lucide.createIcons();
         }
@@ -1232,23 +1616,21 @@
             const container = document.getElementById('intelligenceContent');
             
             container.innerHTML = `
-                <!-- Candidate Header -->
-                <div class="lg:col-span-3 bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4">
-                    <div class="w-14 h-14 rounded-full bg-gradient-to-br from-navy-600 to-navy-800 flex items-center justify-center text-white text-xl font-semibold">
+                <div class="lg:col-span-3 bg-white dark:bg-slate-900 rounded-xl p-4 lg:p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-gradient-to-br from-navy-600 to-navy-800 flex items-center justify-center text-white text-lg lg:text-xl font-semibold shrink-0">
                         ${candidate.name.split(' ').map(n => n[0]).join('')}
                     </div>
-                    <div class="flex-1">
-                        <h3 class="text-xl font-bold text-slate-900 dark:text-white">${candidate.name}</h3>
-                        <p class="text-sm text-slate-500 dark:text-slate-400">${candidate.position} • ${candidate.stage}</p>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-lg lg:text-xl font-bold text-slate-900 dark:text-white truncate">${candidate.name}</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 truncate">${candidate.position} • ${candidate.stage}</p>
                     </div>
-                    <div class="text-right">
-                        <p class="text-3xl font-bold ${candidate.riskScore > 70 ? 'text-red-600 dark:text-red-400' : candidate.riskScore > 40 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${candidate.riskScore}%</p>
+                    <div class="text-right shrink-0">
+                        <p class="text-2xl lg:text-3xl font-bold ${candidate.riskScore > 70 ? 'text-red-600 dark:text-red-400' : candidate.riskScore > 40 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${candidate.riskScore}%</p>
                         <p class="text-xs text-slate-500 uppercase">Risk Score</p>
                     </div>
                 </div>
 
-                <!-- AI Insight Panel -->
-                <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl p-4 lg:p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <i data-lucide="sparkles" class="w-5 h-5 text-teal-500"></i>
                         <h3 class="font-semibold text-slate-900 dark:text-white">AI Insight Panel</h3>
@@ -1295,8 +1677,7 @@
                     </div>
                 </div>
 
-                <!-- Recommended Actions -->
-                <div class="lg:col-span-1 bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div class="lg:col-span-1 bg-white dark:bg-slate-900 rounded-xl p-4 lg:p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                     <h3 class="font-semibold text-slate-900 dark:text-white mb-4">Recommended Actions</h3>
                     <div class="space-y-3">
                         ${candidate.actions.map((a, i) => `
@@ -1310,7 +1691,7 @@
                                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${i === 0 ? 'Within 24 hours' : i === 1 ? 'Immediate action' : 'Schedule this week'}</p>
                                     </div>
                                 </div>
-                                <button onclick="showToast('Action assigned to team', 'success')" class="mt-3 w-full py-2 rounded-lg text-xs font-medium ${i === 0 ? 'bg-red-600 hover:bg-red-700 text-white' : i === 1 ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'} transition-colors">
+                                <button onclick="showToast('Action assigned to team', 'success')" class="mt-3 w-full py-2 rounded-lg text-xs font-medium ${i === 0 ? 'bg-red-600 hover:bg-red-700 text-white' : i === 1 ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'} transition-colors touch-target">
                                     Assign Action
                                 </button>
                             </div>
@@ -1332,7 +1713,7 @@
                     ${row.values.map((v, i) => {
                         const color = v <= 2 ? 'bg-emerald-500' : v === 3 ? 'bg-amber-500' : 'bg-red-500';
                         const opacity = v === 1 ? 'opacity-40' : v === 2 ? 'opacity-70' : 'opacity-100';
-                        return `<div class="heatmap-cell ${color} ${opacity} h-10 rounded flex items-center justify-center cursor-pointer" title="${row.dept} - ${stages[i]}: ${v === 1 ? 'Optimal' : v === 2 ? 'Good' : v === 3 ? 'Warning' : 'Critical'}">
+                        return `<div class="heatmap-cell ${color} ${opacity} h-8 lg:h-10 rounded flex items-center justify-center cursor-pointer" onclick="showToast('${row.dept} — ${stages[i]}: ${v === 1 ? 'Optimal' : v === 2 ? 'Good' : v === 3 ? 'Warning' : 'Critical'}', '${v <= 2 ? 'success' : v === 3 ? 'warning' : 'error'}')" title="${row.dept} - ${stages[i]}: ${v === 1 ? 'Optimal' : v === 2 ? 'Good' : v === 3 ? 'Warning' : 'Critical'}">
                             <span class="text-xs font-bold text-white">${v}</span>
                         </div>`;
                     }).join('')}
@@ -1346,21 +1727,18 @@
             const filtered = actions.filter(a => actionFilter === 'all' || a.priority === actionFilter);
 
             container.innerHTML = filtered.map(a => `
-                <div class="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm card-hover ${a.priority === 'high' ? 'priority-high' : a.priority === 'medium' ? 'priority-medium' : 'priority-low'}">
+                <div class="bg-white dark:bg-slate-900 rounded-xl p-4 lg:p-6 border border-slate-200 dark:border-slate-800 shadow-sm card-hover ${a.priority === 'high' ? 'priority-high' : a.priority === 'medium' ? 'priority-medium' : 'priority-low'}">
                     <div class="flex items-start justify-between mb-4">
-                        <div>
-                            <h4 class="font-semibold text-slate-900 dark:text-white text-lg">${a.role}</h4>
+                        <div class="min-w-0">
+                            <h4 class="font-semibold text-slate-900 dark:text-white text-base lg:text-lg">${a.role}</h4>
                             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Predicted: ${a.prediction}</p>
                         </div>
-                        <span class="px-3 py-1 rounded-full text-xs font-bold ${a.priority === 'high' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' : a.priority === 'medium' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}">
-                            ${a.probability}% Probability
+                        <span class="px-2 lg:px-3 py-1 rounded-full text-xs font-bold ${a.priority === 'high' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' : a.priority === 'medium' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'} whitespace-nowrap ml-2">
+                            ${a.probability}%
                         </span>
                     </div>
                     
                     <div class="mb-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs text-slate-500 dark:text-slate-400">Risk Probability</span>
-                        </div>
                         <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                             <div class="h-full ${a.priority === 'high' ? 'bg-red-500' : a.priority === 'medium' ? 'bg-amber-500' : 'bg-blue-500'} rounded-full transition-all duration-1000" style="width: ${a.probability}%"></div>
                         </div>
@@ -1370,17 +1748,17 @@
                         <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Recommended Actions</p>
                         ${a.actions.map((action, i) => `
                             <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                                <div class="w-6 h-6 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-700 dark:text-teal-400 text-xs font-bold">${i + 1}</div>
+                                <div class="w-6 h-6 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-700 dark:text-teal-400 text-xs font-bold shrink-0">${i + 1}</div>
                                 <p class="text-sm text-slate-700 dark:text-slate-300">${action}</p>
                             </div>
                         `).join('')}
                     </div>
 
                     <div class="flex gap-2 mt-4">
-                        <button onclick="showToast('Action plan activated', 'success')" class="flex-1 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors">
+                        <button onclick="showToast('Action plan activated', 'success')" class="flex-1 py-2.5 lg:py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors touch-target">
                             Activate Plan
                         </button>
-                        <button onclick="showToast('Added to watchlist', 'info')" class="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                        <button onclick="showToast('Added to watchlist', 'info')" class="px-3 py-2.5 lg:py-3 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors touch-target flex items-center justify-center">
                             <i data-lucide="bookmark" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -1394,9 +1772,9 @@
             ['all', 'high', 'medium'].forEach(f => {
                 const btn = document.getElementById(`action-filter-${f}`);
                 if (f === filter) {
-                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900';
+                    btn.className = 'px-3 py-2 rounded-lg text-xs font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 touch-target whitespace-nowrap';
                 } else {
-                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors';
+                    btn.className = 'px-3 py-2 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors touch-target whitespace-nowrap';
                 }
             });
             renderActions();
@@ -1407,15 +1785,16 @@
             const panel = document.getElementById('notificationsPanel');
             if (panel.classList.contains('translate-x-full')) {
                 panel.classList.remove('translate-x-full');
+                document.body.style.overflow = 'hidden';
             } else {
                 panel.classList.add('translate-x-full');
+                document.body.style.overflow = '';
             }
         }
 
         // ==================== EXPORT ====================
         function exportReport() {
             showToast('Executive Summary downloaded', 'success');
-            // Create a mock download
             const content = `TALENTPULSE AI - EXECUTIVE SUMMARY\nGenerated: ${new Date().toLocaleString()}\n\nACTIVE REQUISITIONS: 124\nTOTAL CANDIDATES: 2,847\nHIGH RISK: 186\nOFFER ACCEPTANCE: 87%\nAVG TIME TO FILL: 31 Days\n\nRECRUITMENT HEALTH SCORE: 82/100\n\nThis report contains confidential recruitment intelligence data.`;
             const blob = new Blob([content], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
@@ -1433,7 +1812,7 @@
             const colors = {
                 success: 'bg-emerald-500',
                 error: 'bg-red-500',
-                info: 'bg-navy-800 dark:bg-slate-800',
+                info: 'bg-slate-800 dark:bg-slate-700',
                 warning: 'bg-amber-500'
             };
             const icons = {
@@ -1443,10 +1822,10 @@
                 warning: 'alert-triangle'
             };
             
-            toast.className = `toast flex items-center gap-3 px-4 py-3 ${colors[type]} text-white rounded-lg shadow-lg text-sm font-medium min-w-[300px]`;
+            toast.className = `toast flex items-center gap-3 px-4 py-3 ${colors[type]} text-white rounded-lg shadow-lg text-sm font-medium max-w-full sm:min-w-[300px]`;
             toast.innerHTML = `
-                <i data-lucide="${icons[type]}" class="w-4 h-4"></i>
-                <span>${message}</span>
+                <i data-lucide="${icons[type]}" class="w-4 h-4 shrink-0"></i>
+                <span class="truncate">${message}</span>
             `;
             
             container.appendChild(toast);
@@ -1459,14 +1838,6 @@
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
-
-        // ==================== RESPONSIVE ====================
-        window.addEventListener('resize', () => {
-            if (window.innerWidth >= 1024) {
-                document.getElementById('sidebar').classList.remove('-translate-x-full');
-                document.getElementById('sidebarOverlay').classList.add('hidden');
-            }
-        });
     </script>
 </body>
 </html>
